@@ -1,3 +1,50 @@
+# 🎬 HỆ THỐNG QUẢN LÝ VÉ XEM PHIM
+
+## 🧾 Thông tin chung
+**Tên đề tài:** Web hệ thống quản lý vé xem phim  
+**Môn học:** Nhập môn Công nghệ phần mềm  
+**Ngôn ngữ & Công nghệ sử dụng:**
+- **Frontend:** HTML5, CSS3, JavaScript, Bootstrap 5  
+- **Backend:** PHP 8.x (Laravel Framework 11.x)  
+- **Database:** MySQL  
+- **Công cụ hỗ trợ:** Composer, Node.js, GitHub  
+
+---
+
+## 🎯 Mục tiêu đề tài
+Xây dựng một website giúp khách hàng dễ dàng tra cứu thông tin phim, đặt vé xem phim trực tuyến và quản lý lịch chiếu, phòng chiếu, suất chiếu.  
+Hệ thống hỗ trợ:
+- Quản lý người dùng (Admin / Nhân viên / Khách hàng)
+- Quản lý phim, suất chiếu, phòng chiếu, vé
+- Đặt vé và lưu thông tin giao dịch
+- Xem thống kê, báo cáo doanh thu
+
+---
+
+## ⚙️ Chức năng chính
+
+### 👤 Người dùng (Khách hàng)
+- Đăng ký, đăng nhập, đăng xuất
+- Tra cứu danh sách phim theo tên, thể loại, ngày khởi chiếu
+- Xem chi tiết phim (poster, trailer, mô tả, thời lượng, diễn viên)
+- Chọn suất chiếu, chọn ghế, đặt vé online
+- Xem lịch sử đặt vé
+
+### 🧑‍💼 Quản trị viên (Admin)
+- Đăng nhập quản trị
+- Quản lý thông tin phim (thêm, sửa, xóa)
+- Quản lý suất chiếu, phòng chiếu
+- Quản lý người dùng và nhân viên
+- Xem thống kê doanh thu theo ngày/tháng
+
+---
+
+## 🧰 Cài đặt môi trường
+
+### 1️⃣ Hướng dẫn clone về máy
+```bash
+git clone https://github.com/TRAN-THUY-NGOC/Quan-ly-ve-xem-phim.git
+```
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
