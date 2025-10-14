@@ -41,9 +41,9 @@ Hệ thống hỗ trợ:
 
 ## 🧰 Cài đặt môi trường
 
-### 1️⃣ Cài đặt Laravel Project
+### 1️⃣ Hướng dẫn clone về máy
 ```bash
-composer create-project laravel/laravel QL_Cinema
+git clone https://github.com/TRAN-THUY-NGOC/Quan-ly-ve-xem-phim.git
 ```
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
