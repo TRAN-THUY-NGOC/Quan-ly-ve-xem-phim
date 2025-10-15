@@ -1,47 +1,68 @@
 <x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
-
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
-
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+    <div class="min-h-screen flex flex-col items-center justify-center bg-[#fff9f0]">
+        {{-- Logo --}}
+        <div class="mb-6 text-center">
+            <h1 class="text-4xl font-bold text-[#d32f2f]">
+                <i class="fa-solid fa-film mr-2"></i> CINEMA
+            </h1>
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        {{-- Form đăng nhập --}}
+        <div class="w-full max-w-md bg-[#f6e4b6] rounded-lg shadow-lg p-6">
+            <h2 class="text-center text-2xl font-bold mb-6 text-[#333]">ĐĂNG NHẬP</h2>
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+            <!-- Form -->
+            <form method="POST" action="{{ route('login') }}">
+                @csrf
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                {{-- Tên đăng nhập --}}
+                <div class="mb-4">
+                    <label for="email" class="block font-semibold text-gray-700 mb-2">
+                        Tên đăng nhập:
+                    </label>
+                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring focus:ring-red-300">
+                </div>
+
+                {{-- Mật khẩu --}}
+                <div class="mb-4">
+                    <label for="password" class="block font-semibold text-gray-700 mb-2">
+                        Mật khẩu:
+                    </label>
+                    <input id="password" type="password" name="password" required
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring focus:ring-red-300">
+                </div>
+
+                {{-- Ghi nhớ --}}
+                <div class="flex items-center mb-4">
+                    <input id="remember_me" type="checkbox" name="remember"
+                        class="rounded border-gray-300 text-red-500 focus:ring-red-300">
+                    <label for="remember_me" class="ml-2 text-sm text-gray-700">
+                        Ghi nhớ tôi
+                    </label>
+                </div>
+
+                {{-- Nút đăng nhập --}}
+                <div class="mb-4">
+                    <button type="submit"
+                        class="w-full bg-[#d32f2f] hover:bg-[#b71c1c] text-white font-semibold py-2 px-4 rounded-lg transition">
+                        Đăng nhập
+                    </button>
+                </div>
+
+                {{-- Liên kết đăng ký --}}
+                <p class="text-center text-sm text-gray-700">
+                    Chưa có tài khoản?
+                    <a href="{{ route('register') }}" class="text-red-600 font-semibold hover:underline">
+                        Đăng ký
+                    </a>
+                </p>
+            </form>
         </div>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
+        {{-- Footer --}}
+        <div class="mt-10 text-center text-xs text-gray-500">
+            <p>Chính Sách Khách Hàng | Trung Tuyên | Chính Sách Bảo Mật Thông Tin | Điều Khoản Sử Dụng</p>
         </div>
-
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
+    </div>
 </x-guest-layout>
