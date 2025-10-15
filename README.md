@@ -5,7 +5,7 @@
 **Môn học:** Nhập môn Công nghệ phần mềm  
 **Ngôn ngữ & Công nghệ sử dụng:**
 - **Frontend:** HTML5, CSS3, JavaScript, Bootstrap 5  
-- **Backend:** PHP 8.x (Laravel Framework 11.x)  
+- **Backend:** PHP 8.2.12 (Laravel Framework 12.34.0)  
 - **Database:** MySQL  
 - **Công cụ hỗ trợ:** Composer, Node.js, GitHub  
 
