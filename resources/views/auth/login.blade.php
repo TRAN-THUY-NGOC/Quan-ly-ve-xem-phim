@@ -1,68 +1,80 @@
-<x-guest-layout>
-    <div class="min-h-screen flex flex-col items-center justify-center bg-[#fff9f0]">
-        {{-- Logo --}}
-        <div class="mb-6 text-center">
-            <h1 class="text-4xl font-bold text-[#d32f2f]">
-                <i class="fa-solid fa-film mr-2"></i> CINEMA
-            </h1>
+@extends('layouts.guest')
+@section('title','Đăng nhập')
+
+@section('content')
+<div class="login-page">
+
+  {{-- Logo --}}
+  <div class="text-center my-3 brand">
+    <span class="logo-box me-2">▶</span>
+    <span class="brand-text">CINEMA</span>
+  </div>
+
+  {{-- Tiêu đề dải ngang --}}
+  <div class="section-title text-center">ĐĂNG NHẬP</div>
+
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="login-card p-4 p-md-5">
+          <form method="POST" action="{{ route('login') }}">
+            @csrf
+
+            {{-- Tên đăng nhập --}}
+            <div class="row align-items-center mb-4">
+              <label class="col-md-4 col-form-label form-label-lg fw-bold mb-2 mb-md-0">
+                Tên đăng nhập:
+              </label>
+              <div class="col-md-8">
+                <input id="email" name="email" type="text" class="form-control form-control-lg input-soft"
+                       placeholder="Email hoặc số điện thoại" value="{{ old('email') }}" required autofocus>
+              </div>
+            </div>
+
+            {{-- Mật khẩu --}}
+            <div class="row align-items-center mb-4">
+              <label class="col-md-4 col-form-label form-label-lg fw-bold mb-2 mb-md-0">Mật khẩu:</label>
+              <div class="col-md-8">
+                <div class="input-group input-group-lg">
+                  <input id="password" name="password" type="password" class="form-control input-soft" required>
+                  <button class="btn btn-outline-secondary" type="button" id="togglePass">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+
+            {{-- Ghi nhớ --}}
+            <div class="row mb-4">
+              <div class="col-md-8 offset-md-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="1" id="remember_me" name="remember">
+                  <label class="form-check-label fw-semibold" for="remember_me">Ghi nhớ tôi</label>
+                </div>
+              </div>
+            </div>
+
+            {{-- Nút --}}
+            <div class="row">
+              <div class="col-md-8 offset-md-4">
+                <button type="submit" class="btn btn-danger px-4">Đăng nhập</button>
+              </div>
+            </div>
+
+            {{-- Link đăng ký --}}
+            <p class="mt-3 ms-md-4">
+              Chưa có tài khoản? <a href="{{ route('register') }}" class="fw-bold link-dark">Đăng ký</a>
+            </p>
+          </form>
         </div>
-
-        {{-- Form đăng nhập --}}
-        <div class="w-full max-w-md bg-[#f6e4b6] rounded-lg shadow-lg p-6">
-            <h2 class="text-center text-2xl font-bold mb-6 text-[#333]">ĐĂNG NHẬP</h2>
-
-            <!-- Form -->
-            <form method="POST" action="{{ route('login') }}">
-                @csrf
-
-                {{-- Tên đăng nhập --}}
-                <div class="mb-4">
-                    <label for="email" class="block font-semibold text-gray-700 mb-2">
-                        Tên đăng nhập:
-                    </label>
-                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring focus:ring-red-300">
-                </div>
-
-                {{-- Mật khẩu --}}
-                <div class="mb-4">
-                    <label for="password" class="block font-semibold text-gray-700 mb-2">
-                        Mật khẩu:
-                    </label>
-                    <input id="password" type="password" name="password" required
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring focus:ring-red-300">
-                </div>
-
-                {{-- Ghi nhớ --}}
-                <div class="flex items-center mb-4">
-                    <input id="remember_me" type="checkbox" name="remember"
-                        class="rounded border-gray-300 text-red-500 focus:ring-red-300">
-                    <label for="remember_me" class="ml-2 text-sm text-gray-700">
-                        Ghi nhớ tôi
-                    </label>
-                </div>
-
-                {{-- Nút đăng nhập --}}
-                <div class="mb-4">
-                    <button type="submit"
-                        class="w-full bg-[#d32f2f] hover:bg-[#b71c1c] text-white font-semibold py-2 px-4 rounded-lg transition">
-                        Đăng nhập
-                    </button>
-                </div>
-
-                {{-- Liên kết đăng ký --}}
-                <p class="text-center text-sm text-gray-700">
-                    Chưa có tài khoản?
-                    <a href="{{ route('register') }}" class="text-red-600 font-semibold hover:underline">
-                        Đăng ký
-                    </a>
-                </p>
-            </form>
-        </div>
-
-        {{-- Footer --}}
-        <div class="mt-10 text-center text-xs text-gray-500">
-            <p>Chính Sách Khách Hàng | Trung Tuyên | Chính Sách Bảo Mật Thông Tin | Điều Khoản Sử Dụng</p>
-        </div>
+      </div>
     </div>
-</x-guest-layout>
+  </div>
+
+  {{-- Footer --}}
+  <footer class="site-footer text-center small text-muted">
+    <p>Chính Sách Khách Hàng Thường Xuyên &nbsp;|&nbsp; Chính Sách Bảo Mật Thông Tin &nbsp;|&nbsp; Điều Khoản Sử Dụng</p>
+  </footer>
+</div>
+@endsection

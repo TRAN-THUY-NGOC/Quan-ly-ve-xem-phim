@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
 
 class User extends Authenticatable
 {
@@ -20,12 +22,9 @@ class User extends Authenticatable
     // 🔒 Tự động mã hóa mật khẩu khi set
     public function setPasswordAttribute($value)
     {
-        if (!empty($value)) {
-            // Nếu password chưa mã hóa thì mã hóa
-            $this->attributes['password'] = Hash::needsRehash($value)
-                ? Hash::make($value)
-                : $value;
-        }
+        // Nếu đã là bcrypt ($2y$) thì giữ nguyên, còn lại thì băm
+        $this->attributes['password'] =
+            Str::startsWith((string)$value, '$2y$') ? $value : Hash::make($value);
     }
 
     // Nếu có liên kết Role thì thêm:
@@ -33,4 +32,7 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
+
+
+
 }
