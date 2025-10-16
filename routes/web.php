@@ -16,5 +16,18 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+// --- USER ---
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('user.dashboard'); // resources/views/user/dashboard.blade.php
+    })->name('user.dashboard');
+});
+
+// --- ADMIN ---
+Route::prefix('admin')->middleware(['auth', 'is_admin'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard'); // resources/views/admin/dashboard.blade.php
+    })->name('admin.dashboard');
+});
 
 require __DIR__.'/auth.php';
