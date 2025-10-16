@@ -15,28 +15,43 @@
 
   <div class="container py-4">
     <div class="row justify-content-center">
-      <div class="col-lg-10">
-        <div class="login-card p-4 p-md-5">
+      {{-- Khung tự co: mobile → md(10/12) → lg(8/12) → xl(6/12) --}}
+      <div class="col-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+        <div class="login-card p-3 p-md-4 p-lg-5">
+          {{-- Thông báo lỗi --}}
+          @if ($errors->any())
+            <div class="alert alert-danger">
+              <ul class="mb-0 ps-3">
+                @foreach ($errors->all() as $e)
+                  <li>{{ $e }}</li>
+                @endforeach
+              </ul>
+            </div>
+          @endif
+
           <form method="POST" action="{{ route('login') }}">
             @csrf
 
             {{-- Tên đăng nhập --}}
             <div class="row align-items-center mb-4">
-              <label class="col-md-4 col-form-label form-label-lg fw-bold mb-2 mb-md-0">
-                Tên đăng nhập:
+              <label class="col-12 col-md-4 col-form-label fw-bold mb-2 mb-md-0 text-md-end pe-md-3">                Tên đăng nhập:
               </label>
-              <div class="col-md-8">
-                <input id="email" name="email" type="text" class="form-control form-control-lg input-soft"
-                       placeholder="Email hoặc số điện thoại" value="{{ old('email') }}" required autofocus>
+              <div class="col-12 col-md-8">
+                <input id="email" name="email" type="text"
+                       class="form-control input-soft"
+                       placeholder="Email hoặc số điện thoại"
+                       value="{{ old('email') }}" required autofocus>
               </div>
             </div>
 
             {{-- Mật khẩu --}}
             <div class="row align-items-center mb-4">
-              <label class="col-md-4 col-form-label form-label-lg fw-bold mb-2 mb-md-0">Mật khẩu:</label>
-              <div class="col-md-8">
-                <div class="input-group input-group-lg">
-                  <input id="password" name="password" type="password" class="form-control input-soft" required>
+              <label class="col-12 col-md-4 col-form-label fw-bold mb-2 mb-md-0 text-md-end pe-md-3">                Mật khẩu:
+              </label>
+              <div class="col-12 col-md-8">
+                <div class="input-group">
+                  <input id="password" name="password" type="password"
+                         class="form-control input-soft" required>
                   <button class="btn btn-outline-secondary" type="button" id="togglePass">
                     <i class="fa-solid fa-eye"></i>
                   </button>
@@ -44,10 +59,9 @@
               </div>
             </div>
 
-
             {{-- Ghi nhớ --}}
             <div class="row mb-4">
-              <div class="col-md-8 offset-md-4">
+              <div class="col-12 col-md-8 offset-md-4">
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" value="1" id="remember_me" name="remember">
                   <label class="form-check-label fw-semibold" for="remember_me">Ghi nhớ tôi</label>
@@ -56,25 +70,19 @@
             </div>
 
             {{-- Nút --}}
-            <div class="row">
-              <div class="col-md-8 offset-md-4">
-                <button type="submit" class="btn btn-danger px-4">Đăng nhập</button>
-              </div>
+            <div class="text-center mt-3">
+              <button type="submit" class="btn btn-danger px-5">Đăng nhập</button>
             </div>
 
             {{-- Link đăng ký --}}
-            <p class="mt-3 ms-md-4">
-              Chưa có tài khoản? <a href="{{ route('register') }}" class="fw-bold link-dark">Đăng ký</a>
-            </p>
+            <p class="text-center mt-3">
+              Chưa có tài khoản?
+              <a href="{{ route('register') }}" class="fw-bold link-dark">Đăng ký</a>
+            </p>            
           </form>
         </div>
       </div>
     </div>
   </div>
-
-  {{-- Footer --}}
-  <footer class="site-footer text-center small text-muted">
-    <p>Chính Sách Khách Hàng Thường Xuyên &nbsp;|&nbsp; Chính Sách Bảo Mật Thông Tin &nbsp;|&nbsp; Điều Khoản Sử Dụng</p>
-  </footer>
 </div>
 @endsection
