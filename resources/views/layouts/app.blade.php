@@ -34,7 +34,7 @@
 
   {{-- Page Content --}}
   <main class="container py-4">
-    {{ $slot }} {{-- giữ nguyên vì đây là layout component --}}
+    @yield('content')
   </main>
 
   {{-- Footer đơn giản --}}
