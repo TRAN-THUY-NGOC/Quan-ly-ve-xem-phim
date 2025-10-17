@@ -3,12 +3,33 @@
 
 @section('content')
 <div class="login-page">
+    <!-- ====== HEADER CINEMA ====== -->
+  <div class="navbar-top">
+    <div class="nav-left">
+      <a href="https://facebook.com" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook">
+        Lotte Cinema Facebook
+      </a>
+    </div>
+  
+    <div class="nav-right">
+      <a href="#">Đăng nhập</a>
+      <a href="#">Thẻ thành viên</a>
+      <a href="#">Hỗ trợ khách hàng</a>
+      <button class="lang-btn">English</button>
+    </div>
+  </div>
+
+
+  <!-- ====== END HEADER ====== -->
 
   {{-- Logo --}}
-  <div class="text-center my-3 brand">
-    <span class="logo-box me-2">▶</span>
-    <span class="brand-text">CINEMA</span>
+  <div class="text-center mb-3">
+    <img src="{{ asset('assets/images/logo.png') }}" 
+         alt="Logo Cinema" 
+         style="height: 80px; object-fit: contain;">
   </div>
+
 
   {{-- Tiêu đề dải ngang --}}
   <div class="section-title text-center">ĐĂNG NHẬP</div>
