@@ -15,7 +15,7 @@ use Illuminate\View\View;
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * Hiển thị form đăng ký
      */
     public function create(): View
     {
@@ -23,35 +23,30 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
+     * Xử lý khi người dùng bấm Đăng ký
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'string'], // thêm dòng này nếu có cột role
+            'phone' => ['nullable', 'string', 'max:15'],
         ]);
-    
-        // ⚙️ Kiểm tra nếu role là admin thì mã hóa mật khẩu
-        $password = $request->role === 'admin'
-            ? Hash::make($request->password)
-            : $request->password;
-    
+
+        // Tạo user mới
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => $password,
-            'role' => $request->role, // thêm vào nếu có cột này
+            'phone' => $request->phone ?? null,
+            'password' => Hash::make($request->password),
+            'role' => 'user', // mặc định user
         ]);
-    
-        event(new Registered($user));
-        Auth::login($user);
-    
-        return redirect(route('dashboard', absolute: false));
-    }
 
+
+        event(new Registered($user));
+
+        // Chuyển hướng sau khi đăng ký
+        return redirect()->route('login');
+    }
 }

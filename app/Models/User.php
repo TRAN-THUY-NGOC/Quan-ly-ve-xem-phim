@@ -15,8 +15,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role_id',
+        'phone',
+        'role',
     ];
+    
+
 
     // 🔒 Tự động mã hóa mật khẩu khi set
     public function setPasswordAttribute($value)
