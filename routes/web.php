@@ -55,5 +55,20 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     })->name('admin.dashboard');
 });
 
+// USER ROUTE
+Route::middleware(['auth', 'checkRole:user'])->group(function () {
+    Route::get('/user/dashboard', function () {
+        return view('user.dashboard');
+    })->name('user.dashboard');
+});
+
+// ADMIN ROUTE
+Route::prefix('admin')->middleware(['auth', 'checkRole:admin'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
+});
+
+
 // --- AUTH (LOGIN / REGISTER / LOGOUT) ---
 require __DIR__.'/auth.php';
