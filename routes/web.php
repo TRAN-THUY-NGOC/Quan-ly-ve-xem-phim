@@ -72,7 +72,7 @@ Route::prefix('admin')->middleware(['auth', 'checkRole:admin'])->group(function 
 
 
 // Hiển thị trang thanh toán
-Route::get('/thanhtoan', [PaymentController::class, 'show'])->name('thanhtoan');
+Route::get('/thanhtoan', [PaymentController::class, 'index'])->name('thanhtoan');
 
 // Xử lý form thanh toán (nếu có)
 Route::post('/thanhtoan', [PaymentController::class, 'process'])->name('thanhtoan.process');

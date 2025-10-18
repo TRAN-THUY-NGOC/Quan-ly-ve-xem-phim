@@ -3,20 +3,32 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Order;
 
 class PaymentController extends Controller
 {
-    // Hiển thị trang thanh toán
-    public function show()
+    public function index(Request $request)
     {
-        return view('auth.thanhtoan');
+        // Lấy order_id từ query string: /thanhtoan?order_id=1
+        $order_id = $request->query('order_id');
+
+        if (!$order_id) {
+            abort(404, 'Order ID không được cung cấp.');
+        }
+
+        $order = Order::with([
+            'tickets.showtime.film',
+            'tickets.showtime.cinema',
+            'tickets.showtime.room',
+            'tickets.seat',
+            'user'
+        ])->findOrFail($order_id);
+
+        return view('auth.thanhtoan', compact('order'));
     }
 
-    // Xử lý khi người dùng xác nhận thanh toán
     public function process(Request $request)
     {
-        // Tùy bạn muốn xử lý gì: lưu DB, gửi mail, API ngân hàng, v.v.
-        // Tạm thời mình làm ví dụ đơn giản:
-        return back()->with('success', 'Thanh toán thành công!');
+        // Xử lý thanh toán ở đây
     }
 }
