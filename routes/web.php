@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,5 +71,12 @@ Route::prefix('admin')->middleware(['auth', 'checkRole:admin'])->group(function 
 });
 
 
+// Hiển thị trang thanh toán
+Route::get('/thanhtoan', [PaymentController::class, 'show'])->name('thanhtoan');
+
+// Xử lý form thanh toán (nếu có)
+Route::post('/thanhtoan', [PaymentController::class, 'process'])->name('thanhtoan.process');
+
 // --- AUTH (LOGIN / REGISTER / LOGOUT) ---
 require __DIR__.'/auth.php';
+
