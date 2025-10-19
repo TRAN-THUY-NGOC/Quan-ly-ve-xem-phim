@@ -9,20 +9,12 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id', 'total', 'status', 'email', 'phone'
-    ];
+protected $fillable = [
+    'user_id',
+    'total_amount', // phải có dòng này
+    'status',
+];
 
-    // Một đơn hàng có nhiều vé
-    public function tickets()
-    {
-        // Nhiều tickets thông qua bảng order_details
-        return $this->belongsToMany(Ticket::class, 'order_details', 'order_id', 'ticket_id');
-    }
-
-    // Một đơn hàng thuộc về người dùng
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+    // Nếu bảng không phải 'orders', thêm dòng này:
+    // protected $table = 'orders';
 }

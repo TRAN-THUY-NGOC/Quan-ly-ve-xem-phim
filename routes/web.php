@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PaymentController;
-
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes – Quản lý vé xem phim 🎬
@@ -71,12 +73,44 @@ Route::prefix('admin')->middleware(['auth', 'checkRole:admin'])->group(function 
 });
 
 
-// Hiển thị trang thanh toán
-Route::get('/thanhtoan', [PaymentController::class, 'index'])->name('thanhtoan');
+// --- Đặt vé ---
+Route::get('/datve', [BookingController::class, 'showBookingForm'])->name('datve');
+Route::post('/datve', [BookingController::class, 'store'])->name('datve.store');
 
-// Xử lý form thanh toán (nếu có)
-Route::post('/thanhtoan', [PaymentController::class, 'process'])->name('thanhtoan.process');
+// --- Thanh toán ---
+Route::get('/thanhtoan', [PaymentController::class, 'index'])->name('thanhtoan');
+Route::post('/thanhtoan/process', [PaymentController::class, 'process'])->name('thanhtoan.process');
+Route::get('/thanhtoan/thanhcong', function () {
+    return view('auth.thanhtoan_thanhcong');
+})->name('payment.success');
 
 // --- AUTH (LOGIN / REGISTER / LOGOUT) ---
 require __DIR__.'/auth.php';
+
+// --- AUTH (LOGIN / REGISTER) ---
+// Hiển thị form đăng nhập
+Route::get('/login', [AuthenticatedSessionController::class, 'create'])
+    ->middleware('guest')
+    ->name('login');
+
+// Xử lý đăng nhập
+Route::post('/login', [AuthenticatedSessionController::class, 'store'])
+    ->middleware('guest');
+
+// Hiển thị form đăng ký
+Route::get('/register', [RegisteredUserController::class, 'create'])
+    ->middleware('guest')
+    ->name('register');
+
+// Xử lý đăng ký
+Route::post('/register', [RegisteredUserController::class, 'store'])
+    ->middleware('guest');
+
+// Đăng xuất
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('logout');
+
+
+
 

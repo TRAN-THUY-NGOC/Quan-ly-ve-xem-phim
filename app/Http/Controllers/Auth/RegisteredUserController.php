@@ -40,7 +40,7 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'phone' => $request->phone ?? null,
             'password' => Hash::make($request->password),
-            'role' => 'user', // mặc định user
+            'role_id' => 2, // giả sử role_id = 2 là role "user"
         ]);
 
 
