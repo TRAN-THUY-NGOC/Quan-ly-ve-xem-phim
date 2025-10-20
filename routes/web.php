@@ -7,6 +7,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\FilmController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes – Quản lý vé xem phim 🎬
@@ -86,6 +87,7 @@ Route::get('/thanhtoan/thanhcong', function () {
 
 Route::get('/ticket/{orderId}', [App\Http\Controllers\TicketController::class, 'generateTicket']);
 
+
 // --- AUTH (LOGIN / REGISTER / LOGOUT) ---
 require __DIR__.'/auth.php';
 
@@ -113,6 +115,8 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
 
-
+// --- PHIM ---
+Route::get('/phim', [FilmController::class, 'index'])->name('phim.index');
+Route::get('/phim/{id}', [FilmController::class, 'show'])->name('phim.show');
 
 

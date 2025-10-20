@@ -36,7 +36,10 @@
 
         .top-bar .left img {
             height: 14px;
+            width: 14px;
+            object-fit: contain;
             vertical-align: middle;
+            margin-right: 5px;
         }
 
         .logo-bar {
@@ -138,7 +141,7 @@
             <!-- Bên trái: logo Facebook -->
             <div class="left">
                 <a href="https://facebook.com" target="_blank" 
-                style="display: inline-flex; align-items: center; text-decoration: none; color: #1877f2; font-weight: bold;">
+                style="display: flex; align-items: center; text-decoration: none; color: black; font-weight: bold;">
                     <img src="{{ asset('assets/images/Facebook.png') }}" 
                         alt="Facebook Logo" 
                         style="height: 16px; margin-right: 5px;">
