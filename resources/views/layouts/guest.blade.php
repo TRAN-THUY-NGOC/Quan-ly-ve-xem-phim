@@ -23,6 +23,20 @@
             background-color: #f7f1e7;
             padding: 3px 15px;
             font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .top-bar .left {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .top-bar .left img {
+            height: 14px;
+            vertical-align: middle;
         }
 
         .logo-bar {
@@ -41,6 +55,7 @@
             color: #d82323;
             font-size: 28px;
             letter-spacing: 1px;
+            margin: 0;
         }
 
         /* --- MENU --- */
@@ -120,29 +135,39 @@
 <body>
     <header>
         <div class="top-bar">
-            CINEMA Facebook
-            <span style="float:right;">
-                <div style="text-align:right; padding:5px 30px; font-size:14px;">
-    @auth
-        👤 Xin chào, <strong>{{ Auth::user()->name }}</strong> |
-        <a href="{{ route('profile.edit') }}">Hồ sơ</a> |
-        <form action="{{ route('logout') }}" method="POST" style="display:inline;">
-            @csrf
-            <button type="submit" style="background:none; border:none; color:#007bff; cursor:pointer; padding:0;">
-                Đăng xuất
-            </button>
-        </form>
-    @else
-        <a href="{{ route('login') }}">Đăng nhập</a> |
-        <a href="{{ route('register') }}">Đăng ký</a>
-    @endauth
-</div>| <a href="#">Thẻ thành viên</a> | <a href="#">Hỗ trợ khách hàng</a> | <a href="#">English</a>
-            </span>
+            <!-- Bên trái: logo Facebook -->
+            <div class="left">
+                <a href="https://facebook.com" target="_blank" 
+                style="display: inline-flex; align-items: center; text-decoration: none; color: #1877f2; font-weight: bold;">
+                    <img src="{{ asset('assets/images/Facebook.png') }}" 
+                        alt="Facebook Logo" 
+                        style="height: 16px; margin-right: 5px;">
+                    Facebook
+                </a>
+            </div>
+
+            <!-- Bên phải: các liên kết và tài khoản -->
+            <div style="text-align:right; padding:5px 30px; font-size:14px;">
+                @auth
+                    👤 Xin chào, <strong>{{ Auth::user()->name }}</strong> |
+                    <a href="{{ route('profile.edit') }}">Hồ sơ</a> |
+                    <form action="{{ route('logout') }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" style="background:none; border:none; color:#007bff; cursor:pointer; padding:0;">
+                            Đăng xuất
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}">Đăng nhập</a> |
+                    <a href="{{ route('register') }}">Đăng ký</a>
+                @endauth
+                | <a href="#">Thẻ thành viên</a> | <a href="#">Hỗ trợ khách hàng</a> | <a href="#">English</a>
+            </div>
         </div>
 
+        <!-- Logo chỉ còn 1 chữ CINEMA -->
         <div class="logo-bar">
             <img src="{{ asset('assets/images/logo.png') }}" alt="CINEMA Logo">
-            <h1>CINEMA</h1>
         </div>
 
         <nav>
@@ -162,7 +187,6 @@
     <footer>
         <div class="logo-footer">
             <img src="{{ asset('assets/images/logo.png') }}" alt="CINEMA Logo">
-            <h3>CINEMA</h3>
         </div>
 
         <div class="footer-links">

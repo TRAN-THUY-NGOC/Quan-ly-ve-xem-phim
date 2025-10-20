@@ -23,7 +23,7 @@
   <!-- 🔹 Thanh trên cùng -->
   <div class="top-bar d-flex justify-content-between align-items-center px-4 py-1" style="background:#f9f5ed; font-size:13px;">
     <div>
-      <a href="#" class="text-decoration-none text-dark">CINEMA Facebook</a>
+      <a href="#" class="text-decoration-none text-dark">Facebook</a>
     </div>
 
     <div class="d-flex align-items-center gap-2">

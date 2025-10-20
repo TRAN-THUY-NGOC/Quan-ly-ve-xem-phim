@@ -266,7 +266,7 @@
         <h3>Chọn ví điện tử</h3>
         <input type="text" id="searchEwallet" placeholder="Tìm kiếm ví điện tử...">
         <div id="listEwallet">
-            <div class="discount-option" data-name="MoMo">Paypal</div>
+            <div class="discount-option" data-name="Paypal">Paypal</div>
             <div class="discount-option" data-name="ShopeePay">ShopeePay</div>
             <div class="discount-option" data-name="VNPay">VNPay</div>
         </div>

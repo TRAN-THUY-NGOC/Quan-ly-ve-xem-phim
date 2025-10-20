@@ -84,6 +84,8 @@ Route::get('/thanhtoan/thanhcong', function () {
     return view('auth.thanhtoan_thanhcong');
 })->name('payment.success');
 
+Route::get('/ticket/{orderId}', [App\Http\Controllers\TicketController::class, 'generateTicket']);
+
 // --- AUTH (LOGIN / REGISTER / LOGOUT) ---
 require __DIR__.'/auth.php';
 
