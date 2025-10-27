@@ -152,7 +152,7 @@
             <!-- Bên phải: các liên kết và tài khoản -->
             <div style="text-align:right; padding:5px 30px; font-size:14px;">
                 @auth
-                    👤 Xin chào, <strong>{{ Auth::user()->name }}</strong> |
+                    <strong>{{ Auth::user()->name }}</strong> |
                     <a href="{{ route('profile.edit') }}">Hồ sơ</a> |
                     <form action="{{ route('logout') }}" method="POST" style="display:inline;">
                         @csrf
@@ -164,7 +164,7 @@
                     <a href="{{ route('login') }}">Đăng nhập</a> |
                     <a href="{{ route('register') }}">Đăng ký</a>
                 @endauth
-                | <a href="#">Thẻ thành viên</a> | <a href="#">Hỗ trợ khách hàng</a> | <a href="#">English</a>
+                | <a href="#">English</a>
             </div>
         </div>
 
@@ -173,14 +173,6 @@
             <img src="{{ asset('assets/images/logo.png') }}" alt="CINEMA Logo">
         </div>
 
-        <nav>
-            <a href="#">SHOP QUÀ TẶNG</a>
-            <a href="#">MUA VÉ</a>
-            <a href="#">PHIM</a>
-            <a href="#">RẠP CHIẾU PHIM</a>
-            <a href="#">TIN MỚI & ƯU ĐÃI</a>
-            <a href="#">LIÊN HỆ</a>
-        </nav>
     </header>
 
     <main>
