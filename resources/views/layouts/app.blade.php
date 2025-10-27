@@ -8,11 +8,11 @@
 
   <title>{{ config('app.name', 'Laravel') }}</title>
 
-  {{-- Fonts (tuỳ chọn) --}}
+  {{-- Fonts --}}
   <link rel="preconnect" href="https://fonts.bunny.net">
   <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet"/>
 
-  {{-- Bootstrap 5 CDN thay cho @vite --}}
+  {{-- Bootstrap 5 CDN --}}
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   {{-- CSS riêng --}}
@@ -20,8 +20,31 @@
 </head>
 <body>
 
-  {{-- Navbar (thay cho layouts.navigation bản Tailwind) --}}
-  @includeIf('layouts.navigation') {{-- bạn sẽ đổi file này sang Bootstrap ở dưới --}}
+  <!-- 🔹 Thanh trên cùng -->
+  <div class="top-bar d-flex justify-content-between align-items-center px-4 py-1" style="background:#f9f5ed; font-size:13px;">
+    <div>
+      <a href="#" class="text-decoration-none text-dark">Facebook</a>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      @guest
+        <a href="{{ route('login') }}" class="text-decoration-none" style="color:#5a2d0c;">Đăng nhập</a> |
+      @else
+        <span style="color:#5a2d0c;">{{ Auth::user()->name }}</span> |
+        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+          @csrf
+          <button type="submit" class="btn btn-link p-0 m-0 align-baseline text-decoration-none" style="color:#5a2d0c;">Đăng xuất</button>
+        </form> |
+      @endguest
+
+      <a href="#" class="text-decoration-none" style="color:#5a2d0c;">Thẻ thành viên</a> |
+      <a href="#" class="text-decoration-none" style="color:#5a2d0c;">Hỗ trợ khách hàng</a> |
+      <a href="#" class="text-decoration-none" style="color:#5a2d0c;">English</a>
+    </div>
+  </div>
+
+  {{-- Navbar (logo, menu) --}}
+  @includeIf('layouts.navigation')
 
   {{-- Page Heading --}}
   @isset($header)
@@ -37,7 +60,7 @@
     @yield('content')
   </main>
 
-  {{-- Footer đơn giản --}}
+  {{-- Footer --}}
   <footer class="text-center text-muted small py-4">
     © {{ date('Y') }} Cinema
   </footer>
