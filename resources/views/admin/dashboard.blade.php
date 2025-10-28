@@ -36,11 +36,19 @@
     }
 
     .avatar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .avatar img {
         width: 180px;
         height: 180px;
         border-radius: 50%;
-        background-color: #ddd;
-        margin: 0 auto 20px;
+        object-fit: cover;
+        border: 4px solid #bfa476;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
     .info-card {
@@ -58,17 +66,21 @@
     }
 
     .btn-update {
+        display: inline-block;
         background-color: #d62d20;
         color: white;
         border: none;
         border-radius: 8px;
-        padding: 10px 20px;
-        margin-top: 20px;
+        padding: 12px 24px;
+        margin-top: 40px; /* tăng khoảng cách xuống dưới */
+        text-decoration: none; /* bỏ gạch chân */
+        font-weight: bold;
         transition: all 0.3s;
     }
 
     .btn-update:hover {
         background-color: #b31d14;
+        text-decoration: none; /* đảm bảo không hiện lại gạch chân khi hover */
     }
 
     footer {
@@ -79,20 +91,53 @@
         padding: 20px;
         border-top: 1px solid #ddd;
     }
+
+    /* --- THÔNG BÁO THÀNH CÔNG GIỮA MÀN HÌNH --- */
+    .success-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #4caf50;
+        color: white;
+        font-weight: bold;
+        padding: 20px 40px;
+        border-radius: 12px;
+        font-size: 22px;
+        opacity: 0;
+        z-index: 9999;
+        transition: opacity 0.6s ease;
+    }
+    .success-popup.show {
+        opacity: 1;
+    }
+
 </style>
 
 <div class="container-fluid">
+
+    @if(session('success'))
+        <div id="successPopup" class="success-popup">
+            {{ session('success') }}
+        </div>
+    @endif
 
     <div class="info-container text-center">
         <h2 class="info-title">THÔNG TIN</h2>
 
         <div class="avatar">
             @if(Auth::user()->avatar)
-                <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" 
-                    alt="Avatar" class="rounded-circle" width="180" height="180">
+                <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}"
+                    class="rounded-circle"
+                    width="200"
+                    height="200"
+                    alt="Avatar">
             @else
-                <img src="https://via.placeholder.com/180x180.png?text=Avatar" 
-                    alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('images/default-avatar.png') }}"
+                    class="rounded-circle"
+                    width="200"
+                    height="200"
+                    alt="Avatar">
             @endif
         </div>
 
@@ -106,9 +151,9 @@
         </div>
 
         <!-- Nút cập nhật -->
-        <button class="btn btn-update" data-bs-toggle="modal" data-bs-target="#updateModal">
+        <a href="{{ route('admin.editInfo') }}" class="btn btn-update">
             Cập nhật thông tin
-        </button>
+        </a>
     </div>
 
 
@@ -116,4 +161,17 @@
 
 <!-- JS Bootstrap (nếu layout chưa có) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const popup = document.getElementById("successPopup");
+        if (popup) {
+            popup.classList.add("show");
+            setTimeout(() => {
+                popup.classList.remove("show");
+            }, 3000); // 3 giây biến mất
+        }
+    });
+</script>
+
 @endsection

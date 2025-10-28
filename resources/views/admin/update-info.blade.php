@@ -47,8 +47,9 @@
         <div class="mb-3">
             <label>Ảnh đại diện</label><br>
             @if(Auth::user()->avatar)
-                <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" 
-                     alt="Avatar" width="120" height="120" class="rounded-circle mb-2">
+                    <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" 
+                        width="120" height="120" 
+                        class="rounded-circle mb-2">
             @endif
             <input type="file" name="avatar">
         </div>

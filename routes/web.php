@@ -2,8 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\FilmController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,21 +62,22 @@ Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
 
 
 // --- 5. NHÓM ROUTE QUẢN TRỊ (ADMIN) ---
-// Dùng checkRole để đảm bảo chỉ Admin được truy cập
 Route::prefix('admin')->middleware(['auth', 'checkRole:Admin'])->group(function () {
     Route::get('/dashboard', function () {
-        return view('admin.dashboard'); // resources/views/admin/dashboard.blade.php
+        return view('admin.dashboard');
     })->name('admin.dashboard');
 
-    // 👉 Route cập nhật thông tin admin (khớp với dashboard.blade.php)
-    Route::post('/update-profile', [AdminController::class, 'updateProfile'])
-        ->name('admin.updateProfile');
-
-    // 👉 Thêm 2 route mới
+    // Form hiển thị cập nhật
     Route::get('/update-info', [AdminController::class, 'editInfo'])->name('admin.editInfo');
     Route::post('/update-info', [AdminController::class, 'updateInfo'])->name('admin.updateInfo');
-});
 
+// =========================
+// QUẢN LÝ PHIM (CRUD)
+// =========================
+Route::resource('films', FilmController::class)
+    ->names('admin.films')
+    ->middleware(['auth', 'checkRole:Admin']);
+});
 
 // --- 6. AUTH (LOGIN / REGISTER / LOGOUT) ---
 require __DIR__.'/auth.php';
