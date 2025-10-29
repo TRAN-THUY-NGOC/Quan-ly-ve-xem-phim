@@ -31,7 +31,7 @@
                     </li>
                     {{-- Hồ sơ cá nhân --}}
                     <li class="list-group-item @if($currentRoute == 'profile.edit') active bg-light @endif">
-                        <a href="{{ route('profile.edit') }}" class="text-primary text-decoration-none @if($currentRoute == 'profile.edit') fw-bold @endif">Hồ sơ cá nhân</a>
+                        <a href="{{ route('profile.profileUser') }}" class="text-primary text-decoration-none @if($currentRoute == 'profile.profileUser') fw-bold @endif">Hồ sơ cá nhân</a>
                     </li>
                     {{-- Đăng xuất --}}
                     <li class="list-group-item">

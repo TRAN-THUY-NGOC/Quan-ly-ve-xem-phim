@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // Thêm các route KHÔNG CẦN phân quyền chi tiết tại đây (VD: Tra cứu phim)
+    Route::get('/profile/view', [ProfileController::class, 'profileUser'])->name('profile.profileUser');
 });
 
 
