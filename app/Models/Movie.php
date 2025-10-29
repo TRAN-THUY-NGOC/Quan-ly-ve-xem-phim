@@ -13,4 +13,10 @@ class Movie extends Model
         'title', 'genre', 'duration_min', 'release_date',
         'description', 'poster_url', 'trailer_url', 'is_active'
     ];
+
+    public function comments()
+{
+    return $this->hasMany(Comment::class);
+}
+
 }

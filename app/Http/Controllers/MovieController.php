@@ -28,9 +28,12 @@ class MovieController extends Controller
     }
     public function show($id)
     {
-        $movie = Movie::findOrFail($id);
-        return view('movieshow', compact('movies'));
+        $movies = Movie::findOrFail($id);
+        $comments = $movies->comments()->latest()->get(); // lấy bình luận mới nhất trước
+        return view('movies.movieshow', compact('movies', 'comments'));
     }
+
+
 
 
 }
