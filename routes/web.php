@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\MovieController;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use App\Http\Controllers\CommentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,78 +13,55 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 |--------------------------------------------------------------------------
 */
 
-// --- 1. TRANG CHỦ MẶC ĐỊNH ---
+// --- 1️⃣ TRANG CHỦ ---
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
 
-// --- 2. LOGIC ĐIỀU HƯỚNG DASHBOARD (Dùng sau khi đăng nhập thành công) ---
-// Route này chỉ kiểm tra Auth và chuyển hướng user đến Dashboard phù hợp
+// --- 2️⃣ DASHBOARD CHUYỂN HƯỚNG ---
 Route::get('/dashboard', function () {
     $user = Auth::user();
-
-    // LẤY TÊN VAI TRÒ TỪ MODEL USER
-    // Giả sử mối quan hệ Role đã được định nghĩa: $user->role->name
-    // HOẶC dùng cột 'role' nếu bạn lưu trực tiếp tên vai trò trong bảng users
-    $roleName = $user->role->name ?? $user->role ?? ''; 
-    // Dùng $user->role->name nếu bạn dùng FK, hoặc $user->VaiTro nếu bạn dùng tên cột đó
+    $roleName = $user->role->name ?? $user->role ?? '';
 
     if ($roleName === 'Admin') {
         return redirect()->route('admin.dashboard');
     }
-    
-    // Mọi người dùng đã đăng nhập khác (Khách hàng)
     return redirect()->route('user.dashboard');
-
 })->middleware('auth')->name('dashboard');
 
 
-// --- 3. NHÓM ROUTE CHUNG (Cần đăng nhập) ---
+// --- 3️⃣ PROFILE (DÙNG CHO MỌI USER ĐÃ LOGIN) ---
 Route::middleware('auth')->group(function () {
-    // PROFILE
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    // Thêm các route KHÔNG CẦN phân quyền chi tiết tại đây (VD: Tra cứu phim)
     Route::get('/profile/view', [ProfileController::class, 'profileUser'])->name('profile.profileUser');
 });
 
 
-// --- 4. NHÓM ROUTE KHÁCH HÀNG (USER/CUSTOMER) ---
-// Dùng checkRole để đảm bảo chỉ Customer được truy cập
-Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
-    Route::get('/user/dashboard', function () {
-        return view('user.dashboard'); // resources/views/user/dashboard.blade.php
-    })->name('user.dashboard');
-
-    // Thêm các route chức năng Khách hàng (Đặt vé, Lịch sử, Thanh toán) tại đây
-});
-
-
-// --- 5. NHÓM ROUTE QUẢN TRỊ (ADMIN) ---
-// Dùng checkRole để đảm bảo chỉ Admin được truy cập
+// --- 4️⃣ ADMIN ---
 Route::prefix('admin')->middleware(['auth', 'checkRole:Admin'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard'); // resources/views/admin/dashboard.blade.php
-    })->name('admin.dashboard');
-
-    // 👉 Route cập nhật thông tin admin (khớp với dashboard.blade.php)
-    Route::post('/update-profile', [AdminController::class, 'updateProfile'])
-        ->name('admin.updateProfile');
-
-    // 👉 Thêm 2 route mới
+    Route::get('/dashboard', fn() => view('admin.dashboard'))->name('admin.dashboard');
+    Route::post('/update-profile', [AdminController::class, 'updateProfile'])->name('admin.updateProfile');
     Route::get('/update-info', [AdminController::class, 'editInfo'])->name('admin.editInfo');
     Route::post('/update-info', [AdminController::class, 'updateInfo'])->name('admin.updateInfo');
 });
 
-// --- Movie ------
+
+// --- 5️⃣ KHÁCH HÀNG (CUSTOMER) ---
 Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
-    Route::get('/user/dashboard', [MovieController::class, 'index'])
-        ->name('user.dashboard');
-    Route::get('/movies', [MovieController::class, 'index'])
-        ->name('movies.index');
+    // Dashboard người dùng
+    Route::get('/user/dashboard', [MovieController::class, 'index'])->name('user.dashboard');
+
+    // Danh sách phim
+    Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
+
+    // Chi tiết phim
+    Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movies.show');
+
+    // Bình luận (POST)
+    Route::post('/movies/{id}/comment', [CommentController::class, 'store'])->name('comments.store');
 });
 
 require __DIR__.'/auth.php';

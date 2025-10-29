@@ -26,4 +26,14 @@ class MovieController extends Controller
 
         return view('user.dashboard', compact('movies', 'type'));
     }
+    public function show($id)
+    {
+        $movies = Movie::findOrFail($id);
+        $comments = $movies->comments()->latest()->get(); // lấy bình luận mới nhất trước
+        return view('movies.movieshow', compact('movies', 'comments'));
+    }
+
+
+
+
 }
