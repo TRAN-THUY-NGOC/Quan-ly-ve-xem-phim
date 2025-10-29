@@ -58,7 +58,7 @@ Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
     Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
 
     // Chi tiết phim
-    Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movies.show');
+    Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movies.movieshow');
 
     // Bình luận (POST)
     Route::post('/movies/{id}/comment', [CommentController::class, 'store'])->name('comments.store');
