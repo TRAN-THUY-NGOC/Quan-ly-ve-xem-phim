@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\MovieController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,6 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // Thêm các route KHÔNG CẦN phân quyền chi tiết tại đây (VD: Tra cứu phim)
+    Route::get('/profile/view', [ProfileController::class, 'profileUser'])->name('profile.profileUser');
 });
 
 
@@ -76,6 +78,12 @@ Route::prefix('admin')->middleware(['auth', 'checkRole:Admin'])->group(function 
     Route::post('/update-info', [AdminController::class, 'updateInfo'])->name('admin.updateInfo');
 });
 
+// --- Movie ------
+Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
+    Route::get('/user/dashboard', [MovieController::class, 'index'])
+        ->name('user.dashboard');
+    Route::get('/movies', [MovieController::class, 'index'])
+        ->name('movies.index');
+});
 
-// --- 6. AUTH (LOGIN / REGISTER / LOGOUT) ---
 require __DIR__.'/auth.php';
