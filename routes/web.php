@@ -85,6 +85,8 @@ Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
         ->name('user.dashboard');
     Route::get('/movies', [MovieController::class, 'index'])
         ->name('movies.index');
+    Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movies.movieshow');
+
 });
 
 require __DIR__.'/auth.php';

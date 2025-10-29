@@ -26,4 +26,11 @@ class MovieController extends Controller
 
         return view('user.dashboard', compact('movies', 'type'));
     }
+    public function show($id)
+    {
+        $movie = Movie::findOrFail($id);
+        return view('movieshow', compact('movies'));
+    }
+
+
 }
