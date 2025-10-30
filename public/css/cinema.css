@@ -1,0 +1,145 @@
+/* =========================
+   CINEMA UI — Global Layout
+   ========================= */
+
+/* Reset nhỏ */
+*,
+*::before,
+*::after{ box-sizing:border-box; }
+img{ max-width:100%; height:auto; }
+
+/* ===== Topbar fixed ===== */
+.topbar{
+  height:52px;
+  background:#ebe7d8;           /* kem nhạt */
+  border-bottom:1px solid #e2decf;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+  z-index:1030;
+}
+.has-fixed-top{ padding-top:52px; } /* để nội dung không bị đè */
+
+/* Topbar content */
+.btn-hamburger{
+  background:#a17c3b; color:#fff; border:none;
+  width:36px; height:32px; display:flex; align-items:center; justify-content:center;
+  border-radius:6px;
+}
+.btn-hamburger:hover{ filter:brightness(1.05); }
+
+.fb-icon{
+  font-size:20px; color:#2346d7; margin-right:8px;
+  background:#e9e9ff; border-radius:50%; width:22px; height:22px;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.fb-text{ color:#111; font-weight:700; font-size:14px; }
+
+.role-chip{ font-weight:800; letter-spacing:.5px; font-size:13px; color:#000; }
+.btn-lang{
+  background:#5e523f; color:#fff; border:none; font-weight:700; font-size:13px;
+  padding:6px 14px; border-radius:6px;
+}
+.btn-lang:hover{ filter:brightness(1.05); }
+
+/* Brand nhỏ trên topbar (nếu dùng) */
+.topbar .brand{
+  display:flex; align-items:center; gap:.5rem;
+  font-weight:800; letter-spacing:.4px; color:#000;
+}
+.topbar .brand img{ height:26px; display:block; }
+
+/* ===== Masthead (logo to) ===== */
+.masthead{
+  background:#fff;
+  border-bottom:1px solid #eee;
+}
+.masthead .container{ padding-top:14px; padding-bottom:14px; }
+.masthead-logo{
+  height:64px; max-width:92%; object-fit:contain; display:inline-block;
+}
+
+/* ===== Page toolbar (menu ngang ở thân) ===== */
+.page-toolbar{
+  position:relative; top:0; z-index:1;      /* chạy theo luồng, không đè topbar */
+  background:#eee7d6;
+  border-top:1px solid #e2decf;
+  border-bottom:1px solid #e2decf;
+}
+.page-toolbar .container{ padding:10px 0; }
+
+.pt-btn{
+  display:inline-block;
+  padding:8px 14px;
+  background:#b08a3f; color:#fff; text-decoration:none;
+  font-weight:700; font-size:14px; border-radius:8px;
+  box-shadow:0 1px 0 rgba(0,0,0,.12);
+}
+.pt-btn:hover{ filter:brightness(1.06); color:#fff; }
+
+/* muốn dính khi cuộn? thêm class .sticky ở blade */
+.page-toolbar.sticky{ position:sticky; top:calc(52px + 64px); z-index:1025; }
+
+/* ===== Main app frame ===== */
+.app-wrap{ display:flex; min-height:calc(100vh - 180px); } /* trừ header/footer tuỳ trang */
+
+/* Sidebar trái (Admin/User) */
+.sidebar{
+  width:240px; min-width:240px;
+  background:#b08a3f; color:#fff;
+  padding:20px 16px;
+  border-top-right-radius:12px;
+  border-bottom-right-radius:12px;
+  box-shadow:4px 0 8px rgba(0,0,0,.08);
+  transition:width .28s ease;
+}
+.sidebar .menu-title{
+  font-weight:800; margin-bottom:12px; letter-spacing:.2px;
+}
+.sidebar .menu a{
+  display:block; color:#fff; text-decoration:none;
+  margin-bottom:6px; font-weight:600; padding:6px 8px; border-radius:6px;
+}
+.sidebar .menu a:hover{ background:rgba(255,255,255,.12); color:#fffbe9; }
+
+/* Thu gọn sidebar bằng class ở body */
+.sidebar-collapsed .sidebar{ width:0; min-width:0; overflow:hidden; }
+
+/* (Tuỳ chọn) overlay mode: nếu muốn sidebar phủ lên thay vì co layout,
+   thêm class 'sidebar-overlay' vào body trong JS */
+.sidebar-overlay .sidebar{
+  position:fixed; left:0; top:52px; bottom:0; z-index:1020;
+}
+.sidebar-overlay.sidebar-collapsed .sidebar{
+  transform:translateX(-100%); transition:transform .25s ease;
+}
+
+/* Nội dung chính */
+.content{ flex:1; padding:24px; background:#fff; }
+
+/* ===== Footer ===== */
+.brand-footer{
+  background:#fff; border-top:1px solid #eee; margin-top:40px;
+}
+.brand-footer .wrap{ padding:18px 0; color:#7a7a7a; font-size:.9rem; }
+.brand-footer .logo{ font-weight:900; color:#b23c21; letter-spacing:1px; }
+
+/* ===== Utilities ===== */
+.card-blank{
+  border:1px dashed #d8d8d8; border-radius:10px; padding:24px; background:#fafafa;
+}
+.section-title{
+  font-weight:800; margin-bottom:12px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px){
+  .sidebar{ width:210px; min-width:210px; }
+}
+@media (max-width: 768px){
+  .fb-text{ display:none; }          /* chỉ hiện icon FB trên mobile */
+  .masthead-logo{ height:56px; }
+  .content{ padding:18px; }
+}
+@media (max-width: 576px){
+  .pt-btn{ padding:7px 12px; font-size:13px; }
+  .masthead-logo{ height:52px; }
+}

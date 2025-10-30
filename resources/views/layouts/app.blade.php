@@ -1,49 +1,37 @@
-{{-- resources/views/layouts/app.blade.php --}}
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<!doctype html>
+<html lang="vi">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-
-  <title>{{ config('app.name', 'Laravel') }}</title>
-
-  {{-- Fonts (tuỳ chọn) --}}
-  <link rel="preconnect" href="https://fonts.bunny.net">
-  <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet"/>
-
-  {{-- Bootstrap 5 CDN thay cho @vite --}}
+  <title>@yield('title','LCinema')</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  {{-- CSS riêng --}}
-  <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ asset('css/cinema.css') }}">
 </head>
-<body>
 
-  {{-- Navbar (thay cho layouts.navigation bản Tailwind) --}}
-  @includeIf('layouts.navigation') {{-- bạn sẽ đổi file này sang Bootstrap ở dưới --}}
+<body class="has-fixed-top">
+  {{-- TOPBAR CỐ ĐỊNH --}}
+  @include('layouts.partials.topbar')
 
-  {{-- Page Heading --}}
-  @isset($header)
-    <header class="bg-light border-bottom">
-      <div class="container py-3">
-        {{ $header }}
-      </div>
-    </header>
-  @endisset
+  {{-- LOGO TO GIỮA --}}
+  @include('layouts.partials.masthead')
 
-  {{-- Page Content --}}
-  <main class="container py-4">
-    @yield('content')
-  </main>
+  {{-- THANH MENU NGANG (page toolbar) --}}
+  @include('layouts.partials.page_toolbar')
 
-  {{-- Footer đơn giản --}}
-  <footer class="text-center text-muted small py-4">
-    © {{ date('Y') }} Cinema
-  </footer>
+  {{-- NỘI DUNG CHÍNH --}}
+  <div class="app-wrap">
+    {{-- SIDEBAR (Admin hoặc User) --}}
+    @hasSection('sidebar')
+      @yield('sidebar')
+    @endif
 
-  {{-- JS --}}
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ asset('js/script.js') }}"></script>
+    <main class="content">
+      @yield('content')
+    </main>
+  </div>
+
+  {{-- FOOTER --}}
+  @include('layouts.partials.footer')
 </body>
 </html>
