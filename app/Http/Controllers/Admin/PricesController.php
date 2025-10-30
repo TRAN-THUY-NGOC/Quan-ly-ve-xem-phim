@@ -5,40 +5,63 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Showtime;
-use App\Models\SeatType;
 
 class PricesController extends Controller
 {
-    public function index()
+    public function index(Request $r)
     {
-        $rows = DB::table('showtime_prices')
-            ->join('showtimes','showtime_prices.showtime_id','=','showtimes.id')
-            ->join('seat_types','showtime_prices.seat_type_id','=','seat_types.id')
-            ->join('movies','showtimes.movie_id','=','movies.id')
-            ->select('showtime_prices.*','movies.title','seat_types.name as seat_type_name','showtimes.start_time')
-            ->orderByDesc('showtimes.start_time')->paginate(20);
+        // Bộ lọc (tuỳ chọn)
+        $movieId = $r->integer('movie_id');
+        $roomId  = $r->integer('room_id');
+        $date    = $r->date('date');
 
-        $showtimes = Showtime::with('movie')->orderByDesc('start_time')->limit(50)->get();
-        $seatTypes = SeatType::orderBy('name')->get();
+        $q = DB::table('showtime_prices as sp')
+            ->join('showtimes as st', 'st.id', '=', 'sp.showtime_id')
+            ->join('seat_types as stp', 'stp.id', '=', 'sp.seat_type_id')
+            ->join('rooms as rm', 'rm.id', '=', 'st.room_id')
+            ->join('movies as mv', 'mv.id', '=', 'st.movie_id')
+            ->select(
+                'sp.id',
+                'sp.showtime_id',
+                'sp.seat_type_id',
+                'sp.price_modifier',
+                'st.start_time',
+                'st.end_time',
+                'rm.name as room_name',
+                'mv.title as movie_title',
+                'stp.name as seat_type_name',
+                'stp.base_price'
+            )
+            ->orderBy('st.start_time','desc');
 
-        // return view('admin.prices.index', compact('rows','showtimes','seatTypes'));
-        return response('admin.prices.index (demo) '.$rows->count().' rows');
+        if ($movieId) $q->where('st.movie_id', $movieId);
+        if ($roomId)  $q->where('st.room_id',  $roomId);
+        if ($date)    $q->whereDate('st.start_time', $date);
+
+        $prices = $q->paginate(15)->withQueryString();
+
+        // Dữ liệu filter
+        $movies = DB::table('movies')->orderBy('title')->get(['id','title']);
+        $rooms  = DB::table('rooms')->orderBy('name')->get(['id','name']);
+
+        return view('admin.prices.index', compact('prices','movies','rooms','movieId','roomId','date'));
     }
 
+    // Cập nhật hàng loạt price_modifier
     public function store(Request $r)
     {
-        $data = $r->validate([
-            'showtime_id'   => 'required|exists:showtimes,id',
-            'seat_type_id'  => 'required|exists:seat_types,id',
-            'price_modifier'=> 'required|numeric|min:0|max:10000000',
+        $r->validate([
+            'price' => ['required','array'],
+            'price.*.id' => ['required','integer','exists:showtime_prices,id'],
+            'price.*.price_modifier' => ['required','numeric','min:-1000000','max:10000000'],
         ]);
 
-        DB::table('showtime_prices')->updateOrInsert(
-            ['showtime_id'=>$data['showtime_id'], 'seat_type_id'=>$data['seat_type_id']],
-            ['price_modifier'=>$data['price_modifier']]
-        );
+        foreach ($r->input('price') as $row) {
+            DB::table('showtime_prices')
+              ->where('id', $row['id'])
+              ->update(['price_modifier' => $row['price_modifier']]);
+        }
 
-        return back()->with('ok','Đã lưu giá suất chiếu.');
+        return back()->with('ok', 'Đã cập nhật giá.');
     }
 }

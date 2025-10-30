@@ -24,6 +24,11 @@
       <li class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
         <a href="{{ route('admin.reports.index') }}">Báo cáo & thống kê</a>
       </li>
+
+      {{-- Thêm mới: quản lý tài khoản --}}
+      <li class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+        <a href="{{ route('admin.users.index') }}">Quản lý tài khoản</a>
+      </li>
     </ul>
   </div>
 </nav>
