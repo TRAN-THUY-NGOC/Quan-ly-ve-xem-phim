@@ -3,77 +3,175 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Models\Room;
-use App\Models\Seat;
-use App\Models\SeatType;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class RoomsController extends Controller
 {
     public function index()
     {
-        $rooms = Room::orderBy('name')->paginate(12);
-        // return view('admin.rooms.index', compact('rooms'));
-        return response('admin.rooms.index (demo) '.$rooms->count().' rows');
+        // Lấy phòng + đếm số ghế (không đòi hỏi quan hệ Eloquent)
+        $rooms = Room::orderBy('name')
+            ->paginate(15);
+
+        // map thêm seats_count cho từng phòng
+        $roomIds = $rooms->pluck('id');
+        $seatCounts = DB::table('seats')
+            ->select('room_id', DB::raw('COUNT(*) as c'))
+            ->whereIn('room_id', $roomIds)
+            ->groupBy('room_id')
+            ->pluck('c', 'room_id');
+
+        foreach ($rooms as $r) {
+            $r->seats_count = $seatCounts[$r->id] ?? 0;
+        }
+
+        return view('admin.rooms.index', compact('rooms'));
     }
 
     public function create()
     {
-        // return view('admin.rooms.form', ['room'=>new Room()]);
-        return response('admin.rooms.create (demo)');
+        return view('admin.rooms.form', [
+            'room' => new Room(),
+            'mode' => 'create',
+        ]);
     }
 
     public function store(Request $r)
     {
-        $data = $r->validate([
-            'name'     => 'required|string|max:100|unique:rooms,name',
-            'capacity' => 'required|integer|min:1|max:500',
+        $r->validate([
+            'name'     => ['required','string','max:100', Rule::unique('rooms','name')],
+            'capacity' => ['required','integer','min:1','max:1000'],
         ]);
-        Room::create($data);
-        return redirect()->route('admin.rooms.index')->with('ok','Đã tạo phòng.');
+
+        Room::create($r->only('name','capacity'));
+
+        return redirect()->route('admin.rooms.index')->with('ok', 'Đã tạo phòng chiếu.');
     }
 
     public function edit(Room $room)
     {
-        // return view('admin.rooms.form', compact('room'));
-        return response('admin.rooms.edit (demo) id='.$room->id);
+        return view('admin.rooms.form', [
+            'room' => $room,
+            'mode' => 'edit',
+        ]);
     }
 
     public function update(Request $r, Room $room)
     {
-        $data = $r->validate([
-            'name'     => 'required|string|max:100|unique:rooms,name,'.$room->id,
-            'capacity' => 'required|integer|min:1|max:500',
+        $r->validate([
+            'name'     => ['required','string','max:100', Rule::unique('rooms','name')->ignore($room->id)],
+            'capacity' => ['required','integer','min:1','max:1000'],
         ]);
-        $room->update($data);
-        return redirect()->route('admin.rooms.index')->with('ok','Đã cập nhật phòng.');
+
+        $room->update($r->only('name','capacity'));
+
+        return redirect()->route('admin.rooms.index')->with('ok', 'Đã cập nhật phòng chiếu.');
     }
 
     public function destroy(Room $room)
     {
+        // Nếu phòng đã có showtimes hoặc seats có thể cấm xoá, tuỳ chính sách.
+        $hasShowtimes = DB::table('showtimes')->where('room_id', $room->id)->exists();
+        if ($hasShowtimes) {
+            return back()->withErrors('Phòng đã có suất chiếu, không thể xoá.');
+        }
+
+        DB::table('seats')->where('room_id', $room->id)->delete();
         $room->delete();
-        return back()->with('ok','Đã xóa phòng.');
+
+        return redirect()->route('admin.rooms.index')->with('ok', 'Đã xoá phòng chiếu.');
     }
 
-    // Sinh ghế mặc định: A..F x 10 ghế; 4-7 là VIP nếu có seat_types.
+    /**
+     * Tạo ghế theo sức chứa / cấu trúc bảng seats.
+     * - Nếu seats có (row_letter, seat_number) => tạo A-D, 10 ghế/hàng (đủ capacity).
+     * - Nếu seats có (code) => sinh nhãn A1… theo capacity.
+     * - Nếu seats có (label) => tương tự code.
+     * - Nếu không có các cột trên => báo lỗi hướng dẫn.
+     */
     public function generateSeats(Room $room)
     {
-        $vipId = SeatType::where('name','VIP')->value('id') ?? null;
-        $stdId = SeatType::where('name','Standard')->orWhere('name','Thường')->value('id') ?? null;
+        // Xoá ghế cũ của phòng (nếu muốn reset)
+        DB::table('seats')->where('room_id', $room->id)->delete();
 
-        DB::transaction(function () use ($room, $vipId, $stdId) {
-            foreach (range('A','F') as $row) {
-                foreach (range(1,10) as $n) {
-                    Seat::updateOrCreate(
-                        ['room_id'=>$room->id, 'row_letter'=>$row, 'seat_number'=>$n],
-                        ['seat_type_id'=> ($vipId && $stdId) ? (($n>=4 && $n<=7) ? $vipId : $stdId) : ($stdId ?? $vipId)]
-                    );
+        $capacity = (int)$room->capacity;
+        if ($capacity <= 0) {
+            return back()->withErrors('Sức chứa phòng phải > 0.');
+        }
+
+        // Lấy loại ghế (mặc định ghế Thường nếu có), nếu không có thì để null seat_type_id
+        $seatTypeId = DB::table('seat_types')->where('name','Thường')->value('id');
+
+        // Kiểm tra schema hiện tại của bảng seats
+        $hasRow = Schema::hasColumn('seats','row_letter');
+        $hasNum = Schema::hasColumn('seats','seat_number');
+        $hasCode = Schema::hasColumn('seats','code');
+        $hasLabel = Schema::hasColumn('seats','label');
+
+        if ($hasRow && $hasNum) {
+            // Tạo theo hàng A, B, C... mỗi hàng 10 ghế cho đến khi đủ capacity
+            $rows = range('A','Z');
+            $remain = $capacity;
+            foreach ($rows as $row) {
+                $perRow = min(10, $remain);
+                if ($perRow <= 0) break;
+
+                for ($n=1; $n <= $perRow; $n++) {
+                    DB::table('seats')->insert([
+                        'room_id'      => $room->id,
+                        'row_letter'   => $row,
+                        'seat_number'  => $n,
+                        'seat_type_id' => $seatTypeId,
+                    ]);
                 }
+                $remain -= $perRow;
             }
-        });
+        } elseif ($hasCode) {
+            // Sinh code A1, A2 … đủ capacity
+            $rows = range('A','Z');
+            $remain = $capacity;
+            foreach ($rows as $row) {
+                $perRow = min(10, $remain);
+                if ($perRow <= 0) break;
 
-        $room->update(['capacity'=> Seat::where('room_id',$room->id)->count() ]);
-        return back()->with('ok','Đã sinh ghế cho phòng '.$room->name);
+                for ($n=1; $n <= $perRow; $n++) {
+                    DB::table('seats')->insert([
+                        'room_id'      => $room->id,
+                        'code'         => $row.$n,
+                        'seat_type_id' => $seatTypeId,
+                    ]);
+                }
+                $remain -= $perRow;
+            }
+        } elseif ($hasLabel) {
+            // Sinh label A1, A2 … đủ capacity
+            $rows = range('A','Z');
+            $remain = $capacity;
+            foreach ($rows as $row) {
+                $perRow = min(10, $remain);
+                if ($perRow <= 0) break;
+
+                for ($n=1; $n <= $perRow; $n++) {
+                    DB::table('seats')->insert([
+                        'room_id'      => $room->id,
+                        'label'        => $row.$n,
+                        'seat_type_id' => $seatTypeId,
+                    ]);
+                }
+                $remain -= $perRow;
+            }
+        } else {
+            // Không nhận diện được schema ghế
+            return back()->withErrors(
+                "Không thể tạo ghế: bảng seats thiếu các cột quen thuộc (row_letter/seat_number hoặc code/label). ".
+                "Vui lòng bổ sung 1 trong các cấu trúc cột này."
+            );
+        }
+
+        return back()->with('ok', "Đã tạo ghế cho phòng {$room->name} (tối đa {$capacity}).");
     }
 }
