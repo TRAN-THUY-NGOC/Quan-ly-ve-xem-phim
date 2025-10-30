@@ -2,32 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Payment;
-use Carbon\Carbon;
-use App\Models\Booking;
+use App\Models\Ticket;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
-    // 🧾 Hiển thị trang thanh toán
-    public function show($paymentId)
+    public function show($ticketId)
     {
-        $payment = Payment::with('booking.movie', 'booking.seat')->findOrFail($paymentId);
-        return view('payments.payment', compact('payment'));
+        $ticket = Ticket::with(['showtime.movie','seat','user'])->findOrFail($ticketId);
+        $payment = $ticket->payment; // quan hệ 1-1
+
+        return view('payments.show', compact('ticket','payment'));
     }
 
-    // 💰 Xử lý xác nhận thanh toán
-    public function complete(Request $request, $paymentId)
+    // callback giả lập thanh toán thành công
+    public function complete(Request $request, $ticketId)
     {
-        $payment = Payment::findOrFail($paymentId);
-        $payment->update([
-            'status' => 'completed',
-            'payment_method' => $request->payment_method ?? 'COD',
-            'transaction_code' => 'TX-' . strtoupper(uniqid()),
-            'paid_at' => Carbon::now()
-        ]);
+        DB::transaction(function () use ($ticketId) {
+            $ticket = Ticket::lockForUpdate()->findOrFail($ticketId);
+            $payment = $ticket->payment()->lockForUpdate()->first();
 
-        return redirect()->route('user.dashboard')->with('success', '🎉 Thanh toán thành công!');
+            $payment->update([
+                'status' => 'completed',
+                'paid_at'=> now(),
+            ]);
+
+            $ticket->update(['status' => 'used']); // hoặc 'booked' → tuỳ nghiệp vụ
+        });
+
+        return redirect()->route('tickets.detail', $ticketId)->with('success','Thanh toán thành công.');
     }
-    
 }
