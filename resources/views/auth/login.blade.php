@@ -13,7 +13,6 @@
     </div>
   
     <div class="nav-right">
-      <a href="#">Đăng nhập</a>
       <a href="#">Thẻ thành viên</a>
       <a href="#">Hỗ trợ khách hàng</a>
       <button class="lang-btn">English</button>
