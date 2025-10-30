@@ -2,6 +2,11 @@
 
 @section('title', 'Danh Sách Phim')
 @section('content')
+<div class="text-center mb-4">
+    <a href="{{ route('booking.history') }}" class="btn btn-success">
+        🧾 Lịch sử đặt vé
+    </a>
+</div>
 
 <div class="container mt-4">
     <h3 class="text-center mb-4">🎬 DANH SÁCH PHIM</h3>
@@ -36,7 +41,10 @@
                                 data-bs-target="#trailerModal{{ $movie->id }}">
                             🎞 Trailer
                         </button>
-                        <a href="#" class="btn btn-secondary btn-sm">🎟 Đặt vé</a>
+                        @if (\Carbon\Carbon::parse($movie->release_date)->isPast())
+                            <a href="{{ route('booking.form', $movie->id) }}" class="btn btn-secondary btn-sm">🎟 Đặt vé</a>
+                        @endif
+
                     </div>
 
                     <div class="card-body d-flex flex-column justify-content-between">

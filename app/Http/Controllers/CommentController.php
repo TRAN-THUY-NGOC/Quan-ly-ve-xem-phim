@@ -29,6 +29,6 @@ class CommentController extends Controller
         ]);
 
         // Quay lại trang chi tiết phim
-        return redirect()->route('movies.show', $movies->id)->with('success', 'Bình luận đã được gửi!');
+        return redirect()->route('movies.movieshow', $movies->id)->with('success', 'Bình luận đã được gửi!');
     }
 }
