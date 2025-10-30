@@ -8,36 +8,39 @@ use App\Http\Controllers\MovieController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
+
 /*
 |--------------------------------------------------------------------------
-| Web Routes – QL Vé Xem Phim 🎬
+| Web Routes – QL Vé Xem Phim 🎬 (Đã tối ưu hóa lỗi Chuyển hướng)
 |--------------------------------------------------------------------------
+| Lỗi ERR_TOO_MANY_REDIRECTS đã được xử lý bằng cách loại bỏ Route /dashboard
+| chuyển hướng qua lại. Logic phân quyền Admin/Customer nên được xử lý trong
+| RedirectIfAuthenticated middleware hoặc logic trong RouteServiceProvider::HOME.
 */
 
-// 1️⃣ TRANG CHỦ
+// 1️⃣ TRANG CHỦ CÔNG KHAI
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-// 2️⃣ DASHBOARD CHUYỂN HƯỚNG SAU ĐĂNG NHẬP
-Route::get('/dashboard', function () {
-    $user = Auth::user();
-    $roleName = $user->role->name ?? $user->role ?? '';
-
-    return $roleName === 'Admin'
-        ? redirect()->route('admin.dashboard')
-        : redirect()->route('user.dashboard');
-})->middleware('auth')->name('dashboard');
-
-// 3️⃣ PROFILE (CHO MỌI USER ĐÃ LOGIN)
+// 2️⃣ CÁC ROUTE ĐƯỢC BẢO VỆ (Auth Group)
+// Group này dành cho TẤT CẢ người dùng đã đăng nhập (Admin và Customer)
 Route::middleware('auth')->group(function () {
+    
+    // 2.1. PROFILE (CHO MỌI USER ĐÃ LOGIN)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile/view', [ProfileController::class, 'profileUser'])->name('profile.profileUser');
+
+    // 2.2. ROUTE GỐC SAU KHI LOGIN (Dashboard cũ, nay là User Dashboard)
+    // Tên route này (dashboard) nên được giữ nguyên vì nó là điểm đích mặc định của Auth Scaffolding
+    // Tuy nhiên, logic chuyển hướng sẽ được xử lý ở RouteServiceProvider.php
+    Route::get('/dashboard', [MovieController::class, 'index'])->name('dashboard');
 });
 
-// 4️⃣ ADMIN
+// 3️⃣ ADMIN GROUP
+// Sử dụng checkRole để đảm bảo chỉ Admin mới vào được group này
 Route::prefix('admin')->middleware(['auth', 'checkRole:Admin'])->group(function () {
     Route::get('/dashboard', fn() => view('admin.dashboard'))->name('admin.dashboard');
     Route::post('/update-profile', [AdminController::class, 'updateProfile'])->name('admin.updateProfile');
@@ -45,9 +48,11 @@ Route::prefix('admin')->middleware(['auth', 'checkRole:Admin'])->group(function 
     Route::post('/update-info', [AdminController::class, 'updateInfo'])->name('admin.updateInfo');
 });
 
-// 5️⃣ KHÁCH HÀNG (CUSTOMER)
+// 4️⃣ KHÁCH HÀNG (CUSTOMER) GROUP
+// Sử dụng checkRole để đảm bảo chỉ Customer mới vào được group này
 Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
-    // Danh sách & chi tiết phim
+    
+    // Danh sách & chi tiết phim (Đây là trang đích chính của Customer sau login)
     Route::get('/user/dashboard', [MovieController::class, 'index'])->name('user.dashboard');
     Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
     Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movies.movieshow');
@@ -58,34 +63,14 @@ Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
     // Đặt vé
     Route::get('/movies/{id}/booking', [BookingController::class, 'showBookingForm'])->name('booking.form');
     Route::post('/movies/{id}/booking', [BookingController::class, 'store'])->name('booking.store');
+    
+    // Lịch sử đặt vé
+    Route::get('/user/bookings', [BookingController::class, 'history'])->name('booking.history');
+
+    // Thanh toán (đã gom lại)
+    Route::get('/bookings/{booking}/payment', [BookingController::class, 'showPaymentPage'])->name('booking.payment'); // Hiển thị trang thanh toán sau khi chọn ghế
+    Route::get('/payment/{id}', [PaymentController::class, 'show'])->name('payment.show');
+    Route::post('/payment/{id}/complete', [PaymentController::class, 'complete'])->name('payment.complete');
 });
-
-// Trang thanh toán sau khi chọn ghế
-Route::get('/bookings/{booking}/payment', [BookingController::class, 'showPaymentPage'])->name('booking.payment');
-// === THANH TOÁN ===
-Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
-    Route::get('/payment/{id}', [App\Http\Controllers\PaymentController::class, 'show'])->name('payment.show');
-    Route::post('/payment/{id}/complete', [App\Http\Controllers\PaymentController::class, 'complete'])->name('payment.complete');
-
-Route::get('/user/bookings', [App\Http\Controllers\BookingController::class, 'history'])
-    ->name('booking.history')
-    ->middleware(['auth', 'checkRole:Customer']);
-
-Route::get('/user/bookings', [BookingController::class, 'history'])
-    ->name('booking.history')
-    ->middleware(['auth', 'checkRole:Customer']);
-
-// ✅ Trang hiển thị thanh toán
-Route::get('/payment/{id}', [PaymentController::class, 'show'])
-    ->name('payment.show')
-    ->middleware(['auth', 'checkRole:Customer']);
-
-// ✅ Xác nhận thanh toán (nút “Thanh toán” trong giao diện)
-Route::post('/payment/{id}/complete', [PaymentController::class, 'complete'])
-    ->name('payment.complete')
-    ->middleware(['auth', 'checkRole:Customer']);
-});
-
-
 
 require __DIR__.'/auth.php';
