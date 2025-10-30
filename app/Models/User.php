@@ -12,12 +12,16 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $fillable = [
+        'role_id',   // <— thêm dòng này
         'name',
         'email',
-        'password',
         'phone',
-        'role',
+        'password',
+        'address',
+        'birthday',
+        'avatar',
     ];
+
     
 
 

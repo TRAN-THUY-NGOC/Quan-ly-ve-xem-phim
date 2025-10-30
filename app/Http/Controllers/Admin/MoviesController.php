@@ -8,19 +8,6 @@ use App\Models\Movie;
 
 class MoviesController extends Controller
 {
-    public function index()
-    {
-        $movies = Movie::orderByDesc('created_at')->paginate(12);
-        // return view('admin.movies.index', compact('movies'));
-        return response('admin.movies.index (demo) '. $movies->count().' rows');
-    }
-
-    public function create()
-    {
-        $movie = new Movie(['is_active' => 1]);
-        // return view('admin.movies.form', compact('movie'));
-        return response('admin.movies.create (demo)');
-    }
 
     public function store(Request $r)
     {
@@ -37,12 +24,6 @@ class MoviesController extends Controller
         $data['is_active'] = $r->boolean('is_active');
         Movie::create($data);
         return redirect()->route('admin.movies.index')->with('ok', 'Thêm phim thành công.');
-    }
-
-    public function edit(Movie $movie)
-    {
-        // return view('admin.movies.form', compact('movie'));
-        return response('admin.movies.edit (demo) id='.$movie->id);
     }
 
     public function update(Request $r, Movie $movie)
@@ -67,4 +48,21 @@ class MoviesController extends Controller
         $movie->delete();
         return back()->with('ok', 'Đã xóa phim.');
     }
+    public function index()
+    {
+        $movies = Movie::orderByDesc('created_at')->paginate(12);
+        return view('admin.movies.index', compact('movies'));
+    }
+
+    public function create()
+    {
+        $movie = new Movie(['is_active' => 1]);
+        return view('admin.movies.form', compact('movie'));
+    }
+
+    public function edit(Movie $movie)
+    {
+        return view('admin.movies.form', compact('movie'));
+    }
+
 }
