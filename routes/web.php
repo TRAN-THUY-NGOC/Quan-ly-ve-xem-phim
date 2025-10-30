@@ -5,79 +5,83 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\FilmController;
+use App\Http\Controllers\Admin\ShowtimeController;
+use App\Http\Controllers\Admin\RoomController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes – QL Vé Xem Phim (Đã tối ưu hóa)
+| Web Routes – QL Vé Xem Phim
 |--------------------------------------------------------------------------
 */
 
-// --- 1. TRANG CHỦ MẶC ĐỊNH ---
+// --- 1. TRANG CHỦ ---
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
 
-// --- 2. LOGIC ĐIỀU HƯỚNG DASHBOARD (Dùng sau khi đăng nhập thành công) ---
-// Route này chỉ kiểm tra Auth và chuyển hướng user đến Dashboard phù hợp
+// --- 2. DASHBOARD (TỰ ĐỘNG CHUYỂN HƯỚNG SAU KHI LOGIN) ---
 Route::get('/dashboard', function () {
     $user = Auth::user();
-
-    // LẤY TÊN VAI TRÒ TỪ MODEL USER
-    // Giả sử mối quan hệ Role đã được định nghĩa: $user->role->name
-    // HOẶC dùng cột 'role' nếu bạn lưu trực tiếp tên vai trò trong bảng users
-    $roleName = $user->role->name ?? $user->role ?? ''; 
-    // Dùng $user->role->name nếu bạn dùng FK, hoặc $user->VaiTro nếu bạn dùng tên cột đó
+    $roleName = $user->role->name ?? $user->role ?? ''; // tuỳ vào bạn lưu vai trò kiểu nào
 
     if ($roleName === 'Admin') {
         return redirect()->route('admin.dashboard');
     }
-    
-    // Mọi người dùng đã đăng nhập khác (Khách hàng)
-    return redirect()->route('user.dashboard');
 
+    return redirect()->route('user.dashboard');
 })->middleware('auth')->name('dashboard');
 
 
-// --- 3. NHÓM ROUTE CHUNG (Cần đăng nhập) ---
+// --- 3. PROFILE (DÙNG CHUNG) ---
 Route::middleware('auth')->group(function () {
-    // PROFILE
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    // Thêm các route KHÔNG CẦN phân quyền chi tiết tại đây (VD: Tra cứu phim)
 });
 
 
-// --- 4. NHÓM ROUTE KHÁCH HÀNG (USER/CUSTOMER) ---
-// Dùng checkRole để đảm bảo chỉ Customer được truy cập
+// --- 4. ROUTE KHÁCH HÀNG ---
 Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
     Route::get('/user/dashboard', function () {
-        return view('user.dashboard'); // resources/views/user/dashboard.blade.php
+        return view('user.dashboard');
     })->name('user.dashboard');
-
-    // Thêm các route chức năng Khách hàng (Đặt vé, Lịch sử, Thanh toán) tại đây
 });
 
 
-// --- 5. NHÓM ROUTE QUẢN TRỊ (ADMIN) ---
-Route::prefix('admin')->middleware(['auth', 'checkRole:Admin'])->group(function () {
+// --- 5. ROUTE QUẢN TRỊ VIÊN ---
+Route::prefix('admin')->middleware(['auth', 'checkRole:Admin'])->name('admin.')->group(function () {
+
+    // Dashboard Admin
     Route::get('/dashboard', function () {
         return view('admin.dashboard');
-    })->name('admin.dashboard');
+    })->name('dashboard');
 
-    // Form hiển thị cập nhật
-    Route::get('/update-info', [AdminController::class, 'editInfo'])->name('admin.editInfo');
-    Route::post('/update-info', [AdminController::class, 'updateInfo'])->name('admin.updateInfo');
+    // Cập nhật thông tin admin
+    Route::get('/update-info', [AdminController::class, 'editInfo'])->name('editInfo');
+    Route::post('/update-info', [AdminController::class, 'updateInfo'])->name('updateInfo');
 
-// =========================
-// QUẢN LÝ PHIM (CRUD)
-// =========================
-Route::resource('films', FilmController::class)
-    ->names('admin.films')
-    ->middleware(['auth', 'checkRole:Admin']);
+    // =====================
+    // QUẢN LÝ PHIM (CRUD)
+    // =====================
+    Route::resource('films', FilmController::class);
+
+    // ===========================
+    // QUẢN LÝ SUẤT CHIẾU (CRUD)
+    // ===========================
+    Route::resource('showtimes', ShowtimeController::class);
+
+    // ===========================
+    // QUẢN LÝ PHÒNG CHIẾU (CRUD)
+    // ===========================
+    Route::resource('rooms', RoomController::class);
+
+    // Thống kê số lượng ghế theo loại ghế trong phòng chiếu
+    Route::get('/admin/rooms/statistics', [RoomController::class, 'seatStatistics'])->name('admin.rooms.statistics');
+
+
 });
 
+
 // --- 6. AUTH (LOGIN / REGISTER / LOGOUT) ---
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

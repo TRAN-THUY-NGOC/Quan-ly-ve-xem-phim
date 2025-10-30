@@ -169,6 +169,12 @@
             text-decoration: underline;
         }
     </style>
+
+    <!-- Bootstrap 4 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
 </head>
 
 <body>
@@ -176,8 +182,8 @@
     <div class="side-menu" id="sideMenu">
         <ul>
             <li><a href="{{ route('admin.films.index') }}" style="color:black;text-decoration:none;">QUẢN LÝ PHIM</a></li>
-            <li><a href="#" style="color:black;text-decoration:none;">QUẢN LÝ SUẤT CHIẾU</a></li>
-            <li><a href="#" style="color:black;text-decoration:none;">QUẢN LÝ PHÒNG CHIẾU</a></li>
+            <li><a href="{{ route('admin.showtimes.index') }}" style="color:black;text-decoration:none;">QUẢN LÝ SUẤT CHIẾU</a></li>
+            <li><a href="{{ route('admin.rooms.index') }}" style="color:black;text-decoration:none;">QUẢN LÝ PHÒNG CHIẾU</a></li>
             <li><a href="#" style="color:black;text-decoration:none;">QUẢN LÝ GIÁ VÉ</a></li>
             <li><a href="#" style="color:black;text-decoration:none;">QUẢN LÝ ĐƠN VÉ</a></li>
             <li><a href="#" style="color:black;text-decoration:none;">BÁO CÁO & THỐNG KÊ</a></li>
