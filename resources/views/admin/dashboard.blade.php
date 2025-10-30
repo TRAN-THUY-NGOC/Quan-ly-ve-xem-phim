@@ -1,7 +1,5 @@
 @extends('layouts.app')
 
-
-
 @section('content')
   <div class="container-fluid">
     <h4 class="mb-3 fw-bold">QUẢN LÝ ĐƠN VỊ</h4>

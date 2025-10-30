@@ -33,5 +33,27 @@
 
   {{-- FOOTER --}}
   @include('layouts.partials.footer')
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btnUserDropdown');
+    const menu = document.getElementById('userDropdownMenu');
+  
+    if (btn && menu) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('show');
+      });
+    
+      document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && !btn.contains(e.target)) {
+          menu.classList.remove('show');
+        }
+      });
+    }
+  });
+  </script>
+
+
+
 </body>
 </html>
