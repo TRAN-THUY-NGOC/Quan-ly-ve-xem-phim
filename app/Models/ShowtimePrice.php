@@ -5,23 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Seat extends Model
+class ShowtimePrice extends Model
 {
     use HasFactory;
 
-    protected $table = 'seats';
+    protected $table = 'showtime_prices';
 
-    // Tuỳ schema bạn đã chọn: row_letter/seat_number hoặc label
     protected $fillable = [
-        'room_id',
-        'row_letter',   // hoặc 'label'
-        'seat_number',  // nếu dùng cặp hàng/cột
+        'showtime_id',
         'seat_type_id',
+        'price_modifier',
     ];
 
-    public function room()
+    public function showtime()
     {
-        return $this->belongsTo(Room::class, 'room_id');
+        return $this->belongsTo(Showtime::class, 'showtime_id');
     }
 
     public function seatType()

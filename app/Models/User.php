@@ -22,6 +22,7 @@ class User extends Authenticatable
         'avatar',
     ];
 
+
     
 
 
@@ -41,4 +42,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
+
+    public function tickets()
+    {
+        return $this->hasMany(\App\Models\Ticket::class, 'user_id');
+    }
+    
 }
