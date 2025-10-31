@@ -12,12 +12,17 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $fillable = [
+        'role_id',   // <— thêm dòng này
         'name',
         'email',
-        'password',
         'phone',
-        'role',
+        'password',
+        'address',
+        'birthday',
+        'avatar',
     ];
+
+
     
 
 
@@ -37,4 +42,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
+
+    public function tickets()
+    {
+        return $this->hasMany(\App\Models\Ticket::class, 'user_id');
+    }
+    
 }
