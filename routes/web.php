@@ -29,7 +29,10 @@ use App\Http\Controllers\Admin\UsersController;
 */
 
 // ---------------------- Public ----------------------
-Route::view('/', 'welcome')->name('home');
+
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
 // ---------------------- Auth required (mọi user) ----------------------
 Route::middleware('auth')->group(function () {
