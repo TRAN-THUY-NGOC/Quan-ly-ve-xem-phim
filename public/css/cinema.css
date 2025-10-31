@@ -311,40 +311,58 @@ img{ max-width:100%; height:auto; }
   background: #f6f2e6;
   color: #000;
 }
-/* ===== Admin tools: thanh tìm kiếm + nút thêm ===== */
-.admin-tools { --h: 44px; align-items: center; }
-
-/* Ô tìm kiếm: gọn, dài hơn */
-.admin-tools .form-control{
-  height: var(--h) !important;
-  padding: 10px 16px !important;
-  font-size: 15px;
-  border-radius: 10px;
-  min-width: 340px;
-}
-
-/* Nút tìm / xoá lọc: đồng bộ chiều cao */
-.admin-tools .btn-icon{
-  height: var(--h) !important;
-  padding: 0 16px !important;
-  display: inline-flex;
+/* ===== Căn đều tuyệt đối cho hàng công cụ ===== */
+.admin-tools {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 10px;
-  line-height: 1;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.admin-tools .btn-add{
-  height: calc(var(--h) + 2px) !important;
-  padding: 0 18px !important;
+
+/* Input + nút cùng chiều cao */
+.admin-tools .form-control,
+.admin-tools .btn-icon,
+.admin-tools .btn-add {
+  height: 44px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Nút + Thêm tài khoản: bo tròn đều */
+.admin-tools .btn-add {
+  padding: 0 22px !important;
   border-radius: 12px;
   font-weight: 600;
-}
-.admin-tools .btn-icon i{
-  font-size: 18px;
   line-height: 1;
 }
 
-/* Mobile: co input để không tràn */
-@media (max-width: 576px){
-  .admin-tools .form-control{ min-width: 220px; flex: 1; }
+/* Icon căn giữa chính xác */
+.admin-tools i {
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Ô input: gọn hơn, nhưng vẫn dài */
+.admin-tools .form-control {
+  padding: 10px 16px !important;
+  min-width: 340px;
+  font-size: 15px;
+  border-radius: 10px;
+}
+
+/* Mobile: tự co gọn */
+@media (max-width: 576px) {
+  .admin-tools .form-control { min-width: 220px; flex: 1; }
+}
+
+/* Căn chiều cao control trong bảng */
+.table .btn.btn-sm,
+.table .input-group-sm .form-control,
+.table .input-group-sm .input-group-text {
+  height: 32px;
+  line-height: 32px;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }

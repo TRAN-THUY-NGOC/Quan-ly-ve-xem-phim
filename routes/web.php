@@ -80,6 +80,9 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'checkRole:Admin'])->g
     Route::post('users/{user}/reset-password',
         [UsersController::class, 'resetPassword']
     )->middleware('throttle:5,1')->name('users.resetPassword');
+    
+    Route::post('rooms/{room}/trim-seats', [RoomsController::class, 'trimSeats'])
+    ->name('rooms.trimSeats');
 
 });
 
