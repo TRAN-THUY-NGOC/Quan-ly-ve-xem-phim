@@ -16,8 +16,22 @@
   {{-- LOGO TO GIỮA --}}
   @include('layouts.partials.masthead')
 
-  {{-- THANH MENU NGANG (page toolbar) --}}
-  @include('layouts.partials.page_toolbar')
+  {{-- THANH MENU THEO VAI TRÒ --}}
+  @auth
+    @php
+      $isAdmin = optional(Auth::user()->role)->name === 'Admin' || Auth::user()->role_id === 1;
+    @endphp
+  
+    @if($isAdmin)
+      @include('layouts.partials.page_toolbarAdmin')
+    @else
+      @include('layouts.partials.page_toolbarCustomer')
+    @endif
+  @else
+    {{-- Khách chưa đăng nhập: toolbar công khai (nếu muốn) --}}
+    @includeWhen(View::exists('layouts.partials.public-nav'), 'layouts.partials.public-nav')
+  @endauth
+  
 
   {{-- NỘI DUNG CHÍNH --}}
   <div class="app-wrap">
@@ -35,19 +49,31 @@
   @include('layouts.partials.footer')
   <script>
   document.addEventListener('DOMContentLoaded', () => {
+    // Toggle dropdown user (đoạn bạn đã có)
     const btn = document.getElementById('btnUserDropdown');
     const menu = document.getElementById('userDropdownMenu');
-  
     if (btn && menu) {
       btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        menu.classList.toggle('show');
+        e.stopPropagation(); menu.classList.toggle('show');
       });
-    
       document.addEventListener('click', (e) => {
-        if (!menu.contains(e.target) && !btn.contains(e.target)) {
-          menu.classList.remove('show');
-        }
+        if (!menu.contains(e.target) && !btn.contains(e.target)) menu.classList.remove('show');
+      });
+    }
+  
+    // Toggle nav mobile (Admin & Customer)
+    const btnAdmin = document.getElementById('btnAdminNav');
+    const adminMenu = document.querySelector('.admin-nav .admin-menu');
+    if (btnAdmin && adminMenu) {
+      btnAdmin.addEventListener('click', () => {
+        adminMenu.classList.toggle('d-none');
+      });
+    }
+    const btnCus = document.getElementById('btnCustomerNav');
+    const cusMenu = document.querySelector('.customer-nav .customer-menu');
+    if (btnCus && cusMenu) {
+      btnCus.addEventListener('click', () => {
+        cusMenu.classList.toggle('d-none');
       });
     }
   });
