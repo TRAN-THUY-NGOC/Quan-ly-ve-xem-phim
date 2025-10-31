@@ -84,6 +84,13 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'checkRole:Admin'])->g
     Route::post('rooms/{room}/trim-seats', [RoomsController::class, 'trimSeats'])
     ->name('rooms.trimSeats');
 
+    // routes/web.php  (trong nhóm prefix('admin')->as('admin.')->middleware(['auth','checkRole:Admin']))
+    Route::get('tickets/{ticket}/edit', [\App\Http\Controllers\Admin\TicketsController::class,'edit'])
+        ->name('tickets.edit');
+
+    Route::put('tickets/{ticket}', [\App\Http\Controllers\Admin\TicketsController::class,'update'])
+        ->name('tickets.update');
+
 });
 
 // ---------------------- Customer only ----------------------
