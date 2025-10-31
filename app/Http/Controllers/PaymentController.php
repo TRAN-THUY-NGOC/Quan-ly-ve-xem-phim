@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Payment;
-use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -11,27 +9,31 @@ class PaymentController extends Controller
 {
     public function show($ticketId)
     {
-        $ticket = Ticket::with(['showtime.movie','seat','user'])->findOrFail($ticketId);
-        $payment = $ticket->payment; // quan hệ 1-1
+        $t = DB::table('tickets as t')
+            ->join('showtimes as st','st.id','=','t.showtime_id')
+            ->join('movies as mv','mv.id','=','st.movie_id')
+            ->join('rooms as rm','rm.id','=','st.room_id')
+            ->leftJoin('seats as s','s.id','=','t.seat_id')
+            ->select('t.*','mv.title as movie_title','rm.name as room_name','st.start_time',
+                DB::raw("COALESCE(s.code, s.label, CONCAT(s.row_letter,'',s.seat_number), CAST(s.id as char)) as seat_label"))
+            ->where('t.id',$ticketId)
+            ->first();
 
-        return view('payments.show', compact('ticket','payment'));
+        if (!$t) return redirect()->route('tickets.history')->withErrors('Không tìm thấy vé.');
+
+        return view('payments.show', compact('t'));
     }
 
-    // callback giả lập thanh toán thành công
-    public function complete(Request $request, $ticketId)
+    /**
+     * Demo “thanh toán”: đổi status -> paid
+     */
+    public function complete(Request $r, $ticketId)
     {
-        DB::transaction(function () use ($ticketId) {
-            $ticket = Ticket::lockForUpdate()->findOrFail($ticketId);
-            $payment = $ticket->payment()->lockForUpdate()->first();
+        $ok = DB::table('tickets')->where('id',$ticketId)
+            ->update(['status'=>'paid','updated_at'=>now()]);
+        if (!$ok) return back()->withErrors('Thanh toán thất bại.');
 
-            $payment->update([
-                'status' => 'completed',
-                'paid_at'=> now(),
-            ]);
-
-            $ticket->update(['status' => 'used']); // hoặc 'booked' → tuỳ nghiệp vụ
-        });
-
-        return redirect()->route('tickets.detail', $ticketId)->with('success','Thanh toán thành công.');
+        // TODO: gửi email vé PDF/QR nếu muốn
+        return redirect()->route('tickets.history')->with('ok','Thanh toán thành công. Vé đã được kích hoạt.');
     }
 }
