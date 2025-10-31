@@ -13,32 +13,30 @@ class AuthenticatedSessionController extends Controller
         return view('auth.login');
     }
 
+// app/Http/Controllers/Auth/AuthenticatedSessionController.php
+
     public function store(Request $request)
     {
-        $credentials = $request->validate([
-            'email'    => ['required','email'],
+        $request->validate([
+            'email' => ['required','email'],
             'password' => ['required'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'Thông tin đăng nhập không đúng.'])
-                         ->onlyInput('email');
+        if (Auth::attempt($request->only('email','password'))) {
+            $request->session()->regenerate();
+            $user = Auth::user();
+
+            // Admin → trang Quản lý phim
+            if (optional($user->role)->name === 'Admin' || $user->role_id === 1) {
+                // ưu tiên URL người dùng muốn vào trước (intended), fallback là movies.index
+                return redirect()->intended(route('admin.movies.index'));
+            }
+
+            // User thường
+            return redirect()->route('user.dashboard');
         }
 
-        $request->session()->regenerate();
-
-        // ƯU TIÊN intended() nếu có
-        $intended = redirect()->intended()->getTargetUrl();
-        if ($intended && $intended !== url('/')) {
-            return redirect()->intended();
-        }
-
-        $user = Auth::user();
-        // Điều hướng theo vai trò
-        if (optional($user->role)->name === 'Admin' || $user->role_id === 1) {
-            return redirect()->route('admin.dashboard');
-        }
-        return redirect()->route('user.dashboard');
+        return back()->withErrors(['email' => 'Sai tài khoản hoặc mật khẩu.']);
     }
 
     public function destroy(Request $request)
@@ -46,6 +44,9 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('home');
+    
+        return redirect()->route('login'); // hoặc redirect('/login')
     }
+    
+
 }
