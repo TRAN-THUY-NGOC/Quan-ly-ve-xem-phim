@@ -77,7 +77,9 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'checkRole:Admin'])->g
     Route::resource('users', UsersController::class)->only([
         'index','create','store','edit','update','destroy']);
 
-    Route::post('users/{user}/reset-password', [UsersController::class, 'resetPassword'])->name('users.resetPassword');
+    Route::post('users/{user}/reset-password',
+        [UsersController::class, 'resetPassword']
+    )->middleware('throttle:5,1')->name('users.resetPassword');
 
 });
 
