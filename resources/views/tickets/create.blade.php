@@ -40,11 +40,12 @@
             type="button"
             class="btn btn-outline-primary btn-sm tt-btn {{ $loop->first ? 'active' : '' }}"
             data-type="{{ $t->id }}"
-            data-price="{{ $t->base_price }}"
+            data-price="{{ $t->display_price }}"
           >
-            {{ $t->name }} — {{ number_format($t->base_price, 0, ',', '.') }} đ
+            {{ $t->name }} — {{ number_format($t->display_price, 0, ',', '.') }} đ
           </button>
         @endforeach
+
       </div>
     </div>
   </div>
@@ -156,19 +157,21 @@
   const payBtn   = document.getElementById('btnPay');
   const typeBtns = document.querySelectorAll('.tt-btn');
 
-  let selected = []; // {id, base, label}
+  let selected = []; // {id, label}
+  let currentPrice = Number(document.querySelector('.tt-btn.active')?.dataset.price || 0);
 
   function formatVND(n){ return new Intl.NumberFormat('vi-VN').format(n) + ' đ'; }
 
   function calcTotal(){
-    return selected.reduce((s,x)=> s + Number(x.base), 0);
+    return selected.length * currentPrice;
   }
 
   function render(){
     if(selected.length === 0){
       listBox.textContent = '—';
+      totalTxt.textContent = '0 đ';
       payBtn.disabled = true;
-    }else{
+    } else {
       listBox.textContent = selected.map(x => x.label).join(', ');
       totalTxt.textContent = formatVND(calcTotal());
       payBtn.disabled = false;
@@ -177,7 +180,9 @@
     hidden.innerHTML = '';
     selected.forEach(x=>{
       const i=document.createElement('input');
-      i.type='hidden'; i.name='seat_ids[]'; i.value=x.id;
+      i.type='hidden';
+      i.name='seat_ids[]';
+      i.value=x.id;
       hidden.appendChild(i);
     });
   }
@@ -186,12 +191,11 @@
   seatBtns.forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const id = Number(btn.dataset.id);
-      const base = Number(btn.dataset.base);
       const label = btn.title.split(' • ')[0];
       btn.classList.toggle('selected');
       if(btn.classList.contains('selected')){
-        selected.push({id, base, label});
-      }else{
+        selected.push({id, label});
+      } else {
         selected = selected.filter(x=>x.id!==id);
       }
       render();
@@ -204,11 +208,14 @@
       typeBtns.forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
       seatTypeId = b.dataset.type;
+      currentPrice = Number(b.dataset.price);
       document.getElementById('seat_type_id').value = seatTypeId;
+      render(); // cập nhật lại tổng ngay khi đổi loại ghế
     });
   });
 
   render();
 })();
 </script>
+
 @endsection

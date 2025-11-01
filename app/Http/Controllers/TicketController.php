@@ -10,7 +10,7 @@ use App\Models\Showtime;
 class TicketController extends Controller
 {
     /** Trang chọn ghế và loại vé */
- public function create(Showtime $showtime)
+    public function create(Showtime $showtime)
     {
         // === Lấy thông tin phim và phòng chiếu ===
         $movie = DB::table('movies')->where('id', $showtime->movie_id)->first();
@@ -40,15 +40,16 @@ class TicketController extends Controller
 
         $effective = [];
         foreach ($rows as $r) {
-            if (!is_null($r->final_price)) {
+            if (!is_null($r->final_price) && $r->final_price > 0) {
                 $effective[$r->seat_type_id] = (int)$r->final_price;
             } else {
-                $effective[$r->seat_type_id] = (int)($r->base_price ?? 0) + (int)($r->price ?? 0);
+                $sum = (int)($r->base_price ?? 0) + (int)($r->price ?? 0);
+                $effective[$r->seat_type_id] = $sum > 0 ? $sum : 0;
             }
         }
 
-        // Nếu chưa có giá riêng -> lấy base_price trong seat_types
-        if (empty($effective)) {
+        // Nếu chưa có giá riêng -> fallback lấy base_price từ seat_types
+        if (empty($effective) || collect($effective)->sum() == 0) {
             $effective = DB::table('seat_types')
                 ->pluck('base_price', 'id')
                 ->map(fn($v) => (int)$v)
@@ -57,13 +58,17 @@ class TicketController extends Controller
 
         $priceMap = $effective;
 
-        // === Lấy loại ghế từ bảng seat_types (thay cho “Người lớn/HSSV/Trẻ em”) ===
+        // === Lấy loại ghế từ seat_types, gắn thêm giá hiển thị từ showtime_prices ===
         $ticketTypes = DB::table('seat_types')
             ->select('id', 'name', 'base_price')
             ->orderBy('id')
             ->get();
 
-        // === Suất chiếu khác cùng phim (tùy chọn hiển thị) ===
+        foreach ($ticketTypes as $t) {
+            $t->display_price = $priceMap[$t->id] ?? $t->base_price;
+        }
+
+        // === Suất chiếu khác cùng phim (để hiển thị lựa chọn nhanh) ===
         $otherShowtimes = DB::table('showtimes as st')
             ->join('rooms as rm', 'rm.id', '=', 'st.room_id')
             ->where('st.movie_id', $showtime->movie_id)
@@ -83,6 +88,7 @@ class TicketController extends Controller
             'ticketTypes'
         ));
     }
+
     /** Xử lý lưu vé */
     public function store(Showtime $showtime, Request $request)
     {
@@ -90,45 +96,45 @@ class TicketController extends Controller
         $keys = ['adult', 'student', 'child'];
 
         $data = $request->validate([
-            'seat_ids'    => ['required','array','min:1','max:10'],
+            'seat_ids'    => ['required', 'array', 'min:1', 'max:10'],
             'seat_ids.*'  => ['integer'],
-            'ticket_type' => ['required', 'in:'.implode(',', $keys)],
-            'pay_now'     => ['nullable','boolean'],
+            'ticket_type' => ['required', 'in:' . implode(',', $keys)],
+            'pay_now'     => ['nullable', 'boolean'],
         ]);
 
         $userId = Auth::id();
         $status = $request->boolean('pay_now') ? 'paid' : 'reserved';
 
-        // Lấy giá hiệu lực cho loại ghế
+        // Lấy giá hiệu lực
         $sp = DB::table('showtime_prices')
             ->where('showtime_id', $showtime->id)
-            ->select('seat_type_id','base_price','price','final_price')
+            ->select('seat_type_id', 'base_price', 'price', 'final_price')
             ->get();
 
         $effective = [];
         foreach ($sp as $r) {
-            $effective[$r->seat_type_id] = !is_null($r->final_price)
+            $effective[$r->seat_type_id] = !is_null($r->final_price) && $r->final_price > 0
                 ? (int)$r->final_price
                 : (int)($r->base_price ?? 0) + (int)($r->price ?? 0);
         }
 
-        if (empty($effective)) {
+        if (empty($effective) || collect($effective)->sum() == 0) {
             $effective = DB::table('seat_types')
-                ->pluck('base_price','id')
-                ->map(fn($v)=>(int)$v)
+                ->pluck('base_price', 'id')
+                ->map(fn($v) => (int)$v)
                 ->toArray();
         }
 
         // Hệ số loại vé cố định
-        $coefMap = ['adult'=>1.0, 'student'=>0.8, 'child'=>0.6];
+        $coefMap = ['adult' => 1.0, 'student' => 0.8, 'child' => 0.6];
         $coef = $coefMap[$data['ticket_type']] ?? 1.0;
 
         DB::transaction(function () use ($data, $showtime, $userId, $effective, $coef, $status) {
-            // Kiểm tra ghế đã bị người khác giữ chưa
+            // Kiểm tra ghế bị giữ chỗ chưa
             $exists = DB::table('tickets')
-                ->where('showtime_id',$showtime->id)
-                ->whereIn('seat_id',$data['seat_ids'])
-                ->where('status','!=','canceled')
+                ->where('showtime_id', $showtime->id)
+                ->whereIn('seat_id', $data['seat_ids'])
+                ->where('status', '!=', 'canceled')
                 ->lockForUpdate()
                 ->exists();
 
@@ -138,13 +144,13 @@ class TicketController extends Controller
 
             // Tạo vé mới
             $rows = DB::table('seats')
-                ->whereIn('id',$data['seat_ids'])
-                ->select('id','seat_type_id')
+                ->whereIn('id', $data['seat_ids'])
+                ->select('id', 'seat_type_id')
                 ->get();
 
             foreach ($rows as $row) {
-                $basePrice  = (int)($effective[$row->seat_type_id] ?? 0);
-                $finalPrice = (int) round($basePrice * $coef);
+                $basePrice = (int)($effective[$row->seat_type_id] ?? 0);
+                $finalPrice = (int)round($basePrice * $coef);
 
                 DB::table('tickets')->insert([
                     'showtime_id' => $showtime->id,
@@ -160,9 +166,8 @@ class TicketController extends Controller
             }
         });
 
-        return redirect()->route('tickets.history')
-            ->with('ok', $status === 'paid'
-                ? 'Thanh toán thành công!'
-                : 'Đặt vé thành công! Bạn có thể thanh toán trong mục “Vé của tôi”.');
+        return redirect()->route('tickets.history')->with('ok', $status === 'paid'
+            ? 'Thanh toán thành công!'
+            : 'Đặt vé thành công! Bạn có thể thanh toán trong mục “Vé của tôi”.');
     }
 }
