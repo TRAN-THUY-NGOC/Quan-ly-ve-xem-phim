@@ -23,16 +23,51 @@
   <div class="row g-4">
     {{-- Cột trái: chọn loại vé + sơ đồ ghế --}}
     <div class="col-lg-8">
-      {{-- Chọn loại vé (hiển thị giá theo loại ghế) --}}
+
+      {{-- CHỌN LOẠI VÉ + ĐỔI SUẤT CHIẾU --}}
       <div class="card border-0 shadow-sm mb-3">
         <div class="card-body">
-          <h6 class="fw-bold text-uppercase mb-2">Chọn loại vé</h6>
-          <div class="row g-2 small">
+          <div class="d-flex flex-wrap justify-content-between align-items-end">
+            <h6 class="fw-bold text-uppercase mb-2">Chọn loại vé</h6>
+
+            <div class="d-flex align-items-center gap-2">
+              <label class="small text-muted mb-0">Đổi suất chiếu:</label>
+              <select id="switchShowtime" class="form-select form-select-sm">
+                <option value="{{ $showtime->id }}" selected>
+                  {{ \Illuminate\Support\Carbon::parse($showtime->start_time)->format('H:i d/m/Y') }} — Phòng {{ $room->name }} (hiện tại)
+                </option>
+                @foreach($otherShowtimes as $st)
+                  @if($st->id != $showtime->id)
+                    <option value="{{ $st->id }}">
+                      {{ \Illuminate\Support\Carbon::parse($st->start_time)->format('H:i d/m/Y') }} — Phòng {{ $st->room_name }}
+                    </option>
+                  @endif
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          {{-- Radio loại vé --}}
+          <div class="row g-2 small mt-2" id="ticketTypeGroup">
+            @foreach($ticketTypes as $key => $tp)
+              <div class="col-auto">
+                <input class="btn-check" type="radio" name="ticket_type_radio" id="tt-{{ $key }}"
+                       value="{{ $key }}" data-coef="{{ $tp['coef'] }}"
+                       {{ $key === $defaultType ? 'checked' : '' }}>
+                <label class="btn btn-outline-dark btn-sm" for="tt-{{ $key }}">
+                  {{ $tp['label'] }} (x{{ rtrim(rtrim(number_format($tp['coef'],2,'.',''), '0'), '.') }})
+                </label>
+              </div>
+            @endforeach
+          </div>
+
+          {{-- Bảng giá theo loại ghế (auto cập nhật theo loại vé) --}}
+          <div class="row g-2 small mt-3" id="seatTypePricePreview">
             @foreach($priceMap as $typeId => $price)
               <div class="col-sm-6 col-md-4">
                 <div class="p-2 border rounded d-flex justify-content-between">
-                  <span>Loại #{{ $typeId }}</span>
-                  <b>{{ number_format($price) }} đ</b>
+                  <span>Loại ghế #{{ $typeId }}</span>
+                  <b class="preview-price" data-base="{{ $price }}">{{ number_format($price) }} đ</b>
                 </div>
               </div>
             @endforeach
@@ -48,11 +83,9 @@
 
           <form id="seatForm" method="POST" action="{{ route('tickets.store',$showtime) }}">
             @csrf
+            <input type="hidden" name="ticket_type" id="ticketTypeInput" value="{{ $defaultType }}">
             <div class="seat-grid mx-auto">
-              @php
-                // group seats by row
-                $groups = $seats->groupBy('row_letter');
-              @endphp
+              @php $groups = $seats->groupBy('row_letter'); @endphp
 
               @foreach($groups as $row => $items)
                 <div class="seat-row">
@@ -60,7 +93,7 @@
                   @foreach($items as $s)
                     @php
                       $isTaken = in_array($s->id,$occupied, true);
-                      $price   = $priceMap[$s->seat_type_id] ?? 0;
+                      $price   = $priceMap[$s->seat_type_id] ?? 0; // giá gốc theo seat_type
                     @endphp
                     <button
                       type="button"
@@ -91,7 +124,7 @@
       </div>
     </div>
 
-    {{-- Cột phải: tóm tắt & thanh toán --}}
+    {{-- Cột phải: tóm tắt & đặt vé --}}
     <div class="col-lg-4">
       <div class="card border-0 shadow-sm position-sticky" style="top: 1rem">
         <div class="card-body">
@@ -121,7 +154,7 @@
   </div>
 </div>
 
-{{-- CSS tối giản --}}
+{{-- CSS nhỏ gọn --}}
 <style>
   .seat-grid{display:inline-block;padding:10px;background:#f8fafc;border-radius:12px}
   .seat-row{display:flex;align-items:center;gap:.35rem;margin:.25rem 0}
@@ -137,8 +170,15 @@
   .legend.seat{width:18px;height:18px}
 </style>
 
-{{-- JS chọn ghế + tính tiền --}}
+{{-- JS: đổi suất chiếu + chọn loại vé + tính tiền --}}
 <script>
+  // Đổi suất chiếu
+  document.getElementById('switchShowtime')?.addEventListener('change', function(){
+    if (!this.value) return;
+    if (this.value == '{{ $showtime->id }}') return;
+    window.location.href = "{{ url('/showtimes') }}/" + this.value + "/tickets/create";
+  });
+
   (function(){
     const seatBtns = document.querySelectorAll('.seat:not(.taken)');
     const listBox  = document.getElementById('seatList');
@@ -146,40 +186,47 @@
     const hidden   = document.getElementById('hiddenInputs');
     const payBtn   = document.getElementById('btnPay');
 
-    let selected = []; // {id, price}
+    // Ticket type
+    const typeRadios   = document.querySelectorAll('input[name="ticket_type_radio"]');
+    const typeInput    = document.getElementById('ticketTypeInput');
+    const previewNodes = document.querySelectorAll('#seatTypePricePreview .preview-price');
+
+    let coef = parseFloat(document.querySelector('input[name="ticket_type_radio"]:checked')?.dataset.coef || '1');
+    let selected = []; // {id, priceBase, label}
+
+    function renderPreviewPrices(){
+      previewNodes.forEach(el => {
+        const base = parseFloat(el.dataset.base || '0');
+        el.textContent = new Intl.NumberFormat('vi-VN').format(Math.round(base * coef)) + ' đ';
+      });
+    }
 
     function render(){
-      // list
-      if(selected.length === 0){
-        listBox.textContent = '—';
-        payBtn.disabled = true;
-      }else{
-        listBox.textContent = selected.map(x => x.label || x.id).join(', ');
-        payBtn.disabled = false;
-      }
-      // total
-      const total = selected.reduce((s,x)=> s + Number(x.price||0), 0);
+      // danh sách ghế
+      listBox.textContent = selected.length ? selected.map(x => x.label).join(', ') : '—';
+      payBtn.disabled = selected.length === 0;
+
+      // tổng tiền = Σ(base * coef)
+      const total = selected.reduce((sum,x)=> sum + Math.round((x.priceBase||0) * coef), 0);
       totalTxt.textContent = new Intl.NumberFormat('vi-VN').format(total) + ' đ';
 
       // hidden inputs
       hidden.innerHTML = '';
       selected.forEach(x => {
         const i = document.createElement('input');
-        i.type  = 'hidden';
-        i.name  = 'seat_ids[]';
-        i.value = x.id;
+        i.type = 'hidden'; i.name = 'seat_ids[]'; i.value = x.id;
         hidden.appendChild(i);
       });
     }
 
     seatBtns.forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        const id = Number(btn.dataset.id);
-        const price = Number(btn.dataset.price);
+        const id   = Number(btn.dataset.id);
+        const base = Number(btn.dataset.price);
         btn.classList.toggle('selected');
 
         if(btn.classList.contains('selected')){
-          selected.push({id, price, label: btn.title.split(' • ')[0]});
+          selected.push({id, priceBase: base, label: btn.title.split(' • ')[0]});
         }else{
           selected = selected.filter(x => x.id !== id);
         }
@@ -187,6 +234,18 @@
       });
     });
 
+    // đổi loại vé
+    typeRadios.forEach(r => {
+      r.addEventListener('change', ()=>{
+        if(!r.checked) return;
+        coef = parseFloat(r.dataset.coef || '1');
+        typeInput.value = r.value;
+        renderPreviewPrices();
+        render();
+      });
+    });
+
+    renderPreviewPrices();
     render();
   })();
 </script>
