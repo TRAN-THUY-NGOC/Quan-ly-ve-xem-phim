@@ -186,29 +186,31 @@
 {{-- JS --}}
 <script>
 (function(){
-  // ===== DOM =====
-  const seatBtns   = document.querySelectorAll('.seat:not(.taken)');
-  const listBox    = document.getElementById('seatList');
-  const totalTxt   = document.getElementById('totalText');
-  const subtotalEl = document.getElementById('subtotalText');
-  const hidden     = document.getElementById('hiddenInputs');
-  const payBtn     = document.getElementById('btnPay');
-  const typeBtns   = document.querySelectorAll('.tt-btn');
+  // ====== DOM phần tử ======
+  const seatBtns       = document.querySelectorAll('.seat:not(.taken)');
+  const listBox        = document.getElementById('seatList');
+  const totalTxt       = document.getElementById('totalText');
+  const subtotalEl     = document.getElementById('subtotalText');
+  const hidden         = document.getElementById('hiddenInputs');
+  const payBtn         = document.getElementById('btnPay');
+  const typeBtns       = document.querySelectorAll('.tt-btn');
 
-  const voucherSel = document.getElementById('voucherSelect');
-  const voucherBtn = document.getElementById('applyVoucher');
+  const voucherSel     = document.getElementById('voucherSelect');
+  const voucherBtn     = document.getElementById('applyVoucher');
   const voucherIdInput = document.getElementById('voucher_id');
-  const seatTypeIdInput = document.getElementById('seat_type_id');
-  const voucherNote = document.getElementById('voucherNote');
+  const payNowInput    = document.querySelector('input[name="pay_now"]');
+  const seatTypeInput  = document.getElementById('seat_type_id');
+  const voucherNote    = document.getElementById('voucherNote');
 
-  // ===== State =====
-  let selected = [];              // {id,label,base}
-  let appliedVoucher = null;      // {id,type,value,min}
+  // ====== State ======
+  let selected = [];         // danh sách ghế {id,label,base}
+  let appliedVoucher = null; // voucher {id,type,value,min}
 
-  // ===== Helpers =====
+  // ====== Helper ======
   const fmt = n => new Intl.NumberFormat('vi-VN').format(n) + ' đ';
   const rawSubtotal = () => selected.reduce((s,x)=> s + (Number(x.base)||0), 0);
 
+  // ====== Tính toán voucher & tổng ======
   function calcTotal(subtotal){
     if(!appliedVoucher || subtotal <= 0){
       return { total: subtotal, msg: 'Chọn mã để áp dụng.' };
@@ -217,9 +219,8 @@
     const v  = Number(appliedVoucher.value || 0);
     const mn = Number(appliedVoucher.min || 0);
 
-    if (mn && subtotal < mn) {
+    if (mn && subtotal < mn)
       return { total: subtotal, msg: `Chưa đạt tối thiểu ${fmt(mn)}.` };
-    }
 
     let total = subtotal;
     if (t === 'percent') {
@@ -228,13 +229,13 @@
     } else if (t === 'fixed') {
       total = Math.max(subtotal - v * selected.length, 0);
       return { total, msg: `Đã áp dụng -${fmt(v)} mỗi ghế` };
-    } else {
-      return { total: subtotal, msg: 'Mã không hợp lệ.' };
     }
+    return { total: subtotal, msg: 'Mã không hợp lệ.' };
   }
 
+  // ====== Render giao diện ======
   function render(){
-    // danh sách ghế
+    // Danh sách ghế
     if (selected.length === 0) {
       listBox.textContent = '—';
       payBtn.disabled = true;
@@ -243,24 +244,26 @@
       payBtn.disabled = false;
     }
 
-    // tiền
+    // Tiền
     const subtotal = rawSubtotal();
-    if (subtotalEl) subtotalEl.textContent = fmt(subtotal);
+    subtotalEl.textContent = fmt(subtotal);
+
     const { total, msg } = calcTotal(subtotal);
     totalTxt.textContent = fmt(total);
-    if (voucherNote) voucherNote.textContent = appliedVoucher ? msg : 'Chọn mã để áp dụng.';
+    voucherNote.textContent = appliedVoucher ? msg : 'Chọn mã để áp dụng.';
 
-    // hidden seat_ids
+    // hidden inputs ghế
     hidden.innerHTML = '';
     selected.forEach(x=>{
       const i=document.createElement('input');
-      i.type='hidden'; i.name='seat_ids[]'; i.value=x.id;
+      i.type='hidden';
+      i.name='seat_ids[]';
+      i.value=x.id;
       hidden.appendChild(i);
     });
   }
 
-  // ===== Events =====
-  // chọn ghế
+  // ====== Chọn ghế ======
   seatBtns.forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const id    = Number(btn.dataset.id);
@@ -277,25 +280,26 @@
     });
   });
 
-  // nút loại ghế chỉ đồng bộ hidden (không đổi giá ghế)
+  // ====== Chọn loại ghế (chỉ đồng bộ, không đổi giá) ======
   typeBtns.forEach(b=>{
     b.addEventListener('click', ()=>{
       typeBtns.forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
-      if (seatTypeIdInput) seatTypeIdInput.value = b.dataset.type || '';
+      if (seatTypeInput) seatTypeInput.value = b.dataset.type || '';
       render();
     });
   });
 
-  // đọc option -> set appliedVoucher
+  // ====== Chọn & áp dụng voucher ======
   function setVoucherFromSelect(){
     const id = voucherSel?.value || '';
     if (!id) {
       appliedVoucher = null;
-      voucherIdInput && (voucherIdInput.value = '');
+      voucherIdInput.value = '';
       render();
       return;
     }
+
     const opt = voucherSel.selectedOptions[0];
     appliedVoucher = {
       id: Number(id),
@@ -303,21 +307,32 @@
       value: Number(opt?.dataset?.value || 0),
       min: Number(opt?.dataset?.min || 0),
     };
-    voucherIdInput && (voucherIdInput.value = id);
+    voucherIdInput.value = id;
     render();
   }
 
-  // áp dụng khi bấm nút hoặc khi đổi option
-  voucherBtn && voucherBtn.addEventListener('click', setVoucherFromSelect);
-  voucherSel && voucherSel.addEventListener('change', setVoucherFromSelect);
+  voucherBtn.addEventListener('click', setVoucherFromSelect);
+  voucherSel.addEventListener('change', setVoucherFromSelect);
 
-  // submit
-  payBtn.addEventListener('click', ()=> document.getElementById('seatForm').submit());
+  // ====== Nút Thanh toán ======
+  payBtn.addEventListener('click', ()=>{
+    // Gạt sang chế độ thanh toán ngay
+    if (payNowInput) payNowInput.value = '1';
 
-  // init
+    // Nếu user chỉ chọn mã mà chưa bấm "Áp dụng", vẫn sync voucher
+    if (voucherSel && voucherIdInput && !voucherIdInput.value) {
+      voucherIdInput.value = voucherSel.value || '';
+    }
+
+    // Submit form
+    document.getElementById('seatForm').submit();
+  });
+
+  // ====== Khởi tạo ======
   render();
 })();
 </script>
+
 
 
 
