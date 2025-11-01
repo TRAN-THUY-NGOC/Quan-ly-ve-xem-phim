@@ -4,7 +4,7 @@
 @section('content')
 <div class="container py-4">
 
-  {{-- Header --}}
+  {{-- Header + đổi suất chiếu --}}
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
     <div>
       <h4 class="fw-bold mb-1">{{ $movie->title }}</h4>
@@ -19,8 +19,7 @@
         @foreach($otherShowtimes as $st)
           @php $url = route('tickets.create',$st->id); @endphp
           <option value="{{ $url }}" {{ $st->id==$showtime->id ? 'selected' : '' }}>
-            {{ \Illuminate\Support\Carbon::parse($st->start_time)->format('H:i d/m/Y') }} — {{ $st->room_name }}
-            {{ $st->id==$showtime->id ? '(hiện tại)' : '' }}
+            {{ \Illuminate\Support\Carbon::parse($st->start_time)->format('H:i d/m/Y') }} — {{ $st->room_name }} {{ $st->id==$showtime->id ? '(hiện tại)' : '' }}
           </option>
         @endforeach
       </select>
@@ -31,28 +30,27 @@
     </div>
   </div>
 
-<div class="card border-0 shadow-sm mb-3">
-  <div class="card-body">
-    <h6 class="fw-bold text-uppercase mb-2">Chọn loại ghế</h6>
-    <div class="d-flex flex-wrap gap-2">
-      @foreach($ticketTypes as $t)
-        <button
-          type="button"
-          class="btn btn-outline-primary btn-sm tt-btn {{ $loop->first ? 'active' : '' }}"
-          data-type="{{ $t->id }}"
-          data-price="{{ $t->base_price }}"
-        >
-          {{ $t->name }} — {{ number_format($t->base_price, 0, ',', '.') }} đ
-        </button>
-      @endforeach
-
+  {{-- Chọn loại ghế --}}
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      <h6 class="fw-bold text-uppercase mb-2">Chọn loại ghế</h6>
+      <div class="d-flex flex-wrap gap-2">
+        @foreach($ticketTypes as $t)
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm tt-btn {{ $loop->first ? 'active' : '' }}"
+            data-type="{{ $t->id }}"
+            data-price="{{ $t->base_price }}"
+          >
+            {{ $t->name }} — {{ number_format($t->base_price, 0, ',', '.') }} đ
+          </button>
+        @endforeach
+      </div>
     </div>
   </div>
-</div>
-
 
   <div class="row g-4">
-    {{-- Danh sách ghế --}}
+    {{-- Ghế --}}
     <div class="col-lg-8">
       <div class="card border-0 shadow-sm">
         <div class="card-body">
@@ -61,7 +59,7 @@
 
           <form id="seatForm" method="POST" action="{{ route('tickets.store',$showtime) }}">
             @csrf
-            
+            <input type="hidden" name="seat_type_id" id="seat_type_id" value="{{ $ticketTypes->first()->id ?? 1 }}">
 
             <div class="seat-grid mx-auto">
               @php $groups = $seats->groupBy('row_letter'); @endphp
@@ -70,7 +68,7 @@
                   <div class="seat-row-label">{{ $row }}</div>
                   @foreach($items as $s)
                     @php
-                      $isTaken = in_array($s->id, $occupied, true);
+                      $isTaken = in_array($s->id,$occupied,true);
                       $price   = $priceMap[$s->seat_type_id] ?? 0;
                       $label   = $s->code ?: ($s->row_letter.$s->seat_number);
                     @endphp
@@ -98,9 +96,9 @@
       </div>
     </div>
 
-    {{-- Tóm tắt --}}
+    {{-- Tóm tắt + Thanh toán --}}
     <div class="col-lg-4">
-      <div class="card border-0 shadow-sm position-sticky" style="top:1rem">
+      <div class="card border-0 shadow-sm position-sticky" style="top: 1rem">
         <div class="card-body">
           <h6 class="fw-bold mb-2">Tóm tắt</h6>
           <div class="mb-1 small text-muted">Phim</div>
@@ -118,7 +116,9 @@
             <div class="fw-bold" id="totalText">0 đ</div>
           </div>
 
-          <button type="button" class="btn btn-primary w-100 mt-3" id="btnPay" disabled>Thanh toán</button>
+          <button type="button" class="btn btn-primary w-100 mt-3" id="btnPay" disabled>
+            Thanh toán
+          </button>
           <div class="text-muted small mt-2">
             * Vé ở trạng thái <b>giữ chỗ</b>. Bạn có thể thanh toán trong mục “Vé của tôi”.
           </div>
@@ -136,7 +136,7 @@
   .seat{
     width:28px;height:28px;border-radius:6px;border:1px solid #cbd5e1;background:#fff;
     display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;
-    transition:.15s;user-select:none;
+    transition:.15s; user-select:none;
   }
   .seat:hover{transform:translateY(-2px);box-shadow:0 2px 8px rgba(0,0,0,.08)}
   .seat.selected{background:#2563eb;color:#fff;border-color:#1d4ed8}
@@ -148,34 +148,33 @@
 {{-- JS --}}
 <script>
 (function(){
-  let ticketType = document.getElementById('ticket_type').value;
-  let coef = getCoef(ticketType);
+  let seatTypeId = document.getElementById('seat_type_id').value;
   const seatBtns = document.querySelectorAll('.seat:not(.taken)');
-  const listBox = document.getElementById('seatList');
+  const listBox  = document.getElementById('seatList');
   const totalTxt = document.getElementById('totalText');
-  const hidden = document.getElementById('hiddenInputs');
-  const payBtn = document.getElementById('btnPay');
+  const hidden   = document.getElementById('hiddenInputs');
+  const payBtn   = document.getElementById('btnPay');
   const typeBtns = document.querySelectorAll('.tt-btn');
-  let selected = [];
 
-  function getCoef(type){
-    const btn = document.querySelector(`.tt-btn[data-type="${type}"]`);
-    return btn ? Number(btn.dataset.coef) : 1.0;
+  let selected = []; // {id, base, label}
+
+  function formatVND(n){ return new Intl.NumberFormat('vi-VN').format(n) + ' đ'; }
+
+  function calcTotal(){
+    return selected.reduce((s,x)=> s + Number(x.base), 0);
   }
 
-  function formatVND(n){return new Intl.NumberFormat('vi-VN').format(n) + ' đ';}
-  function calcTotal(){return selected.reduce((s,x)=>s+Math.round(Number(x.base)*coef),0);}
   function render(){
-    if(selected.length===0){
-      listBox.textContent='—'; totalTxt.textContent='0 đ'; payBtn.disabled=true;
+    if(selected.length === 0){
+      listBox.textContent = '—';
+      payBtn.disabled = true;
     }else{
-      listBox.textContent=selected.map(x=>x.label).join(', ');
-      const t=calcTotal();
-      totalTxt.textContent=formatVND(t);
-      payBtn.textContent='Thanh toán '+formatVND(t);
-      payBtn.disabled=false;
+      listBox.textContent = selected.map(x => x.label).join(', ');
+      totalTxt.textContent = formatVND(calcTotal());
+      payBtn.disabled = false;
     }
-    hidden.innerHTML='';
+
+    hidden.innerHTML = '';
     selected.forEach(x=>{
       const i=document.createElement('input');
       i.type='hidden'; i.name='seat_ids[]'; i.value=x.id;
@@ -183,36 +182,33 @@
     });
   }
 
+  // chọn ghế
   seatBtns.forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const id=Number(btn.dataset.id);
-      const base=Number(btn.dataset.base);
-      const label=btn.title.split(' • ')[0];
+    btn.addEventListener('click', ()=>{
+      const id = Number(btn.dataset.id);
+      const base = Number(btn.dataset.base);
+      const label = btn.title.split(' • ')[0];
       btn.classList.toggle('selected');
-      if(btn.classList.contains('selected')) selected.push({id,base,label});
-      else selected=selected.filter(x=>x.id!==id);
+      if(btn.classList.contains('selected')){
+        selected.push({id, base, label});
+      }else{
+        selected = selected.filter(x=>x.id!==id);
+      }
       render();
     });
   });
 
+  // chọn loại ghế
   typeBtns.forEach(b=>{
-    b.addEventListener('click',()=>{
+    b.addEventListener('click', ()=>{
       typeBtns.forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
-      ticketType=b.dataset.type;
-      coef=Number(b.dataset.coef);
-      document.getElementById('ticket_type').value=ticketType;
-      render();
+      seatTypeId = b.dataset.type;
+      document.getElementById('seat_type_id').value = seatTypeId;
     });
   });
 
-  payBtn.addEventListener('click',()=>{
-    const form=document.getElementById('seatForm');
-    const inp=document.createElement('input');
-    inp.type='hidden'; inp.name='pay_now'; inp.value='1';
-    form.appendChild(inp);
-    form.submit();
-  });
+  render();
 })();
 </script>
 @endsection
