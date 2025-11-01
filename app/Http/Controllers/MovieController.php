@@ -60,11 +60,23 @@ class MovieController extends Controller
 
     public function show($movieId, Request $r)
     {
-        $movie = DB::table('movies')->where('id', $movieId)->first();
-        if (!$movie) return redirect()->route('movies.index')->withErrors('Không tìm thấy phim.');
-
-        $day = $r->query('date') ? Carbon::parse($r->query('date')) : Carbon::today();
-
+        // map summary -> description để view dùng $movie->description không lỗi
+        $movie = DB::table('movies')
+            ->select(
+                'id', 'title', 'genre', 'poster_url', 'trailer_url',
+                'release_date', 'duration',
+                DB::raw('summary as description')
+            )
+            ->where('id', $movieId)
+            ->first();
+            
+        if (!$movie) {
+            return redirect()->route('movies.index')->withErrors('Không tìm thấy phim.');
+        }
+    
+        $date = $r->query('date'); // yyyy-mm-dd
+        $day  = $date ? Carbon::parse($date) : Carbon::today();
+    
         $showtimes = DB::table('showtimes as st')
             ->join('rooms as rm', 'rm.id', '=', 'st.room_id')
             ->where('st.movie_id', $movieId)
@@ -72,7 +84,8 @@ class MovieController extends Controller
             ->orderBy('st.start_time')
             ->select('st.id', 'st.start_time', 'rm.name as room_name', 'rm.id as room_id')
             ->get();
-
-        return view('movies.show', compact('movie','showtimes','day'));
+    
+        return view('movies.show', compact('movie', 'showtimes', 'day'));
     }
+
 }
