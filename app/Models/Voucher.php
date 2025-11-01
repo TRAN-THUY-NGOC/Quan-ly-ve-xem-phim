@@ -3,30 +3,31 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Voucher extends Model
 {
-    use HasFactory;
-
     protected $table = 'vouchers';
 
     protected $fillable = [
-        'code','type','value','max_discount_amount','min_order_amount',
-        'start_date','end_date','usage_limit','times_used','is_active',
+        'code', 'type', 'value',
+        'start_at', 'end_at',
+        'usage_limit', 'used_count',
+        'status', 'meta',
     ];
 
     protected $casts = [
-        'start_date' => 'datetime',
-        'end_date'   => 'datetime',
-        'is_active'  => 'boolean',
-        'value'               => 'decimal:2',
-        'max_discount_amount' => 'decimal:2',
-        'min_order_amount'    => 'decimal:2',
+        'start_at' => 'datetime',
+        'end_at'   => 'datetime',
+        'meta'     => 'array',
     ];
 
-    public function tickets()
+    public function isActive(): bool
     {
-        return $this->hasMany(Ticket::class, 'voucher_id');
+        $now = now();
+        if ((int)$this->status !== 1) return false;
+        if ($this->start_at && $this->start_at->gt($now)) return false;
+        if ($this->end_at && $this->end_at->lt($now)) return false;
+        if (!is_null($this->usage_limit) && $this->used_count >= $this->usage_limit) return false;
+        return true;
     }
 }

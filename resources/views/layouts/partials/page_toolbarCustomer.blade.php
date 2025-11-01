@@ -14,12 +14,12 @@
       <li class="{{ request()->is('movies*') ? 'active' : '' }}">
         <a href="{{ url('/movies') }}">Phim</a>
       </li>
-      <li class="{{ request()->is('showtimes*') ? 'active' : '' }}">
+      <!-- <li class="{{ request()->is('showtimes*') ? 'active' : '' }}">
         <a href="{{ url('/showtimes') }}">Lịch chiếu</a>
       </li>
       <li class="{{ request()->is('prices*') ? 'active' : '' }}">
         <a href="{{ url('/prices') }}">Giá vé</a>
-      </li>
+      </li> -->
       <li class="{{ request()->is('tickets*') ? 'active' : '' }}">
         <a href="{{ url('/tickets') }}">Vé của tôi</a>
       </li>
