@@ -19,10 +19,10 @@
   <main class="py-4">
     @yield('content')
   </main>
-
-  <footer class="text-center py-4 small text-muted">
+  @include('layouts.partials.footer')
+  <!-- <footer class="text-center py-4 small text-muted">
     Chính Sách Khách Hàng Thường Xuyên | Chính Sách Bảo Mật Thông Tin | Điều Khoản Sử Dụng
-  </footer>
+  </footer> -->
 
   {{-- JS --}}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

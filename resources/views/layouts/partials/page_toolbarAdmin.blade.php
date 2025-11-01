@@ -1,6 +1,6 @@
 <nav class="admin-nav">
   <div class="container d-flex align-items-center">
-    <!-- hamburger chỉ hiện trên mobile -->
+
     <button id="btnAdminNav" class="btn-hamburger d-md-none me-2" aria-label="Menu">
       <i class="bi bi-list" style="font-size:18px"></i>
     </button>
@@ -24,8 +24,6 @@
       <li class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
         <a href="{{ route('admin.reports.index') }}">Báo cáo & thống kê</a>
       </li>
-
-      {{-- Thêm mới: quản lý tài khoản --}}
       <li class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
         <a href="{{ route('admin.users.index') }}">Quản lý tài khoản</a>
       </li>

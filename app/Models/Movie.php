@@ -11,18 +11,31 @@ class Movie extends Model
 
     protected $table = 'movies';
 
+        // app/Models/Movie.php
     protected $fillable = [
-        'title','genre','duration_min','release_date',
-        'description','poster_url','trailer_url','is_active',
+      'title','genre','duration','release_date',
+      'director','cast','summary',
+      'poster_url','poster_thumb','trailer_url',
+      'status','is_now_showing',
     ];
 
     protected $casts = [
-        'release_date' => 'date',
-        'is_active'    => 'boolean',
+      'is_now_showing' => 'boolean',
+      'release_date'   => 'date:Y-m-d',
     ];
+
 
     public function showtimes()
     {
         return $this->hasMany(Showtime::class, 'movie_id');
     }
+    // app/Models/Movie.php
+    public function scopeNowShowing($q){
+        return $q->where('is_now_showing',1);
+    }
+    public function scopeUpcoming($q){
+        return $q->where('is_now_showing',0)
+                 ->orWhereDate('release_date','>',now());
+    }
+
 }

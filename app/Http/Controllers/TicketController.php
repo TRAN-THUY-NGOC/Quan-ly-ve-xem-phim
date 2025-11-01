@@ -3,134 +3,171 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use App\Models\Showtime;
 
 class TicketController extends Controller
 {
-    /**
-     * Form chọn ghế cho 1 suất chiếu
-     */
-    public function create($showtimeId)
+    /** Trang chọn ghế và loại vé */
+    public function create(Showtime $showtime)
     {
-        $st = DB::table('showtimes as st')
-            ->join('movies as mv','mv.id','=','st.movie_id')
-            ->join('rooms as rm','rm.id','=','st.room_id')
-            ->select('st.*','mv.title as movie_title','rm.name as room_name','rm.id as room_id')
-            ->where('st.id',$showtimeId)->first();
+        // === Lấy thông tin phim và phòng chiếu ===
+        $movie = DB::table('movies')->where('id', $showtime->movie_id)->first();
+        $room  = DB::table('rooms')->where('id', $showtime->room_id)->first();
 
-        if (!$st) return back()->withErrors('Không tìm thấy suất chiếu.');
-
-        // Lấy ghế của phòng
-        $seatLabelExpr = $this->seatLabelSql(); // COALESCE theo schema
-        $seats = DB::table('seats')
-            ->where('room_id', $st->room_id)
-            ->select('id', DB::raw("$seatLabelExpr as label"), 'row_letter','seat_number','code','label as label_raw')
-            ->orderByRaw("COALESCE(row_letter,'Z') asc, seat_number asc")
+        // === Lấy danh sách ghế theo phòng ===
+        $seats = DB::table('seats as s')
+            ->leftJoin('seat_types as t', 't.id', '=', 's.seat_type_id')
+            ->where('s.room_id', $showtime->room_id)
+            ->select('s.id', 's.row_letter', 's.seat_number', 's.code', 's.seat_type_id', 't.name as seat_type')
+            ->orderBy('s.row_letter')
+            ->orderBy('s.seat_number')
             ->get();
 
-        // Ghế đã được giữ/đặt cho suất này (trạng thái hợp lệ)
-        $taken = DB::table('tickets')
-            ->where('showtime_id', $showtimeId)
-            ->whereIn('status',['pending','paid','used'])
-            ->pluck('seat_id')->filter()->all();
+        // === Ghế đã đặt ===
+        $occupied = DB::table('tickets')
+            ->where('showtime_id', $showtime->id)
+            ->where('status', '!=', 'canceled')
+            ->pluck('seat_id')
+            ->toArray();
 
-        // Giá gốc theo loại ghế? (tuỳ bảng price). Ở bản demo, mình lấy giá gốc 80k.
-        $basePrice = 80000;
+        // === Lấy giá ghế từ showtime_prices hoặc seat_types ===
+        $rows = DB::table('showtime_prices')
+            ->where('showtime_id', $showtime->id)
+            ->select('seat_type_id', 'base_price', 'price', 'final_price')
+            ->get();
 
-        return view('tickets.create', [
-            'st'        => $st,
-            'seats'     => $seats,
-            'taken'     => $taken,
-            'basePrice' => $basePrice,
-        ]);
-    }
-
-    /**
-     * Tạo vé (đặt chỗ). Demo: set status = pending, tạo mã QR/code.
-     */
-    public function store(Request $r, $showtimeId)
-    {
-        $data = $r->validate([
-            'seat_id' => ['required','integer'],
-        ]);
-
-        $user = Auth::user();
-
-        // Check suất tồn tại
-        $st = DB::table('showtimes')->where('id',$showtimeId)->first();
-        if (!$st) return back()->withErrors('Suất chiếu không tồn tại.');
-
-        // Check seat thuộc đúng room của suất và chưa có vé khác giữ
-        $seatRoom = DB::table('seats')->where('id',$data['seat_id'])->value('room_id');
-        if (!$seatRoom) return back()->withErrors('Ghế không hợp lệ.');
-        if ((int)$seatRoom !== (int)$st->room_id) return back()->withErrors('Ghế không thuộc phòng của suất này.');
-
-        $exists = DB::table('tickets')
-            ->where('showtime_id',$showtimeId)
-            ->where('seat_id',$data['seat_id'])
-            ->whereIn('status',['pending','paid','used'])
-            ->exists();
-        if ($exists) return back()->withErrors('Ghế đã có người giữ/đặt.');
-
-        // Tính giá (demo)
-        $basePrice = 80000;
-        $discount  = 0;
-        $memberRate= 0;
-        $final     = $basePrice - $discount;
-
-        $ticketId = DB::table('tickets')->insertGetId([
-            'user_id'                  => $user->id,
-            'showtime_id'              => $showtimeId,
-            'seat_id'                  => $data['seat_id'],
-            'qr_code'                  => Str::upper(Str::random(10)),
-            'status'                   => 'pending', // chờ thanh toán
-            'discount_amount'          => $discount,
-            'membership_discount_rate' => $memberRate,
-            'final_price'              => $final,
-            'created_at'               => now(),
-            'updated_at'               => now(),
-        ]);
-
-        return redirect()->route('payments.show', $ticketId)
-            ->with('ok','Đã giữ ghế, vui lòng thanh toán.');
-    }
-
-    /**
-     * Lịch sử vé của user
-     */
-    public function history()
-    {
-        $userId = auth()->id();
-
-        $seatLabelExpr = $this->seatLabelSql('s');
-
-        $tickets = DB::table('tickets as t')
-            ->join('showtimes as st','st.id','=','t.showtime_id')
-            ->join('movies as mv','mv.id','=','st.movie_id')
-            ->join('rooms as rm','rm.id','=','st.room_id')
-            ->leftJoin('seats as s','s.id','=','t.seat_id')
-            ->where('t.user_id',$userId)
-            ->orderByDesc('t.created_at')
-            ->select('t.*','mv.title as movie_title','rm.name as room_name','st.start_time',
-                DB::raw("$seatLabelExpr as seat_label"))
-            ->paginate(15);
-
-        return view('tickets.history', compact('tickets'));
-    }
-
-    private function seatLabelSql(?string $alias = null): string
-    {
-        $tbl = $alias ?: 'seats';
-        $parts = [];
-        if (\Schema::hasColumn('seats','code'))       $parts[] = "$tbl.code";
-        if (\Schema::hasColumn('seats','label'))      $parts[] = "$tbl.label";
-        if (\Schema::hasColumn('seats','row_letter') && \Schema::hasColumn('seats','seat_number')) {
-            $parts[] = "CONCAT($tbl.row_letter,'', $tbl.seat_number)";
+        $effective = [];
+        foreach ($rows as $r) {
+            if (!is_null($r->final_price) && $r->final_price > 0) {
+                $effective[$r->seat_type_id] = (int)$r->final_price;
+            } else {
+                $sum = (int)($r->base_price ?? 0) + (int)($r->price ?? 0);
+                $effective[$r->seat_type_id] = $sum > 0 ? $sum : 0;
+            }
         }
-        $parts[] = "CAST($tbl.id AS CHAR)";
-        return 'COALESCE('.implode(', ', $parts).')';
+
+        // Nếu chưa có giá riêng -> fallback lấy base_price từ seat_types
+        if (empty($effective) || collect($effective)->sum() == 0) {
+            $effective = DB::table('seat_types')
+                ->pluck('base_price', 'id')
+                ->map(fn($v) => (int)$v)
+                ->toArray();
+        }
+
+        $priceMap = $effective;
+
+        // === Lấy loại ghế từ seat_types, gắn thêm giá hiển thị từ showtime_prices ===
+        $ticketTypes = DB::table('seat_types')
+            ->select('id', 'name', 'base_price')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($ticketTypes as $t) {
+            $t->display_price = $priceMap[$t->id] ?? $t->base_price;
+        }
+
+        // === Suất chiếu khác cùng phim (để hiển thị lựa chọn nhanh) ===
+        $otherShowtimes = DB::table('showtimes as st')
+            ->join('rooms as rm', 'rm.id', '=', 'st.room_id')
+            ->where('st.movie_id', $showtime->movie_id)
+            ->whereDate('st.start_time', '>=', now()->toDateString())
+            ->select('st.id', 'st.start_time', 'rm.name as room_name')
+            ->orderBy('st.start_time')
+            ->get();
+
+        return view('tickets.create', compact(
+            'showtime',
+            'movie',
+            'room',
+            'seats',
+            'occupied',
+            'priceMap',
+            'otherShowtimes',
+            'ticketTypes'
+        ));
+    }
+
+    /** Xử lý lưu vé */
+    public function store(Showtime $showtime, Request $request)
+    {
+        // Các loại vé hợp lệ cố định
+        $keys = ['adult', 'student', 'child'];
+
+        $data = $request->validate([
+            'seat_ids'    => ['required', 'array', 'min:1', 'max:10'],
+            'seat_ids.*'  => ['integer'],
+            'ticket_type' => ['required', 'in:' . implode(',', $keys)],
+            'pay_now'     => ['nullable', 'boolean'],
+        ]);
+
+        $userId = Auth::id();
+        $status = $request->boolean('pay_now') ? 'paid' : 'reserved';
+
+        // Lấy giá hiệu lực
+        $sp = DB::table('showtime_prices')
+            ->where('showtime_id', $showtime->id)
+            ->select('seat_type_id', 'base_price', 'price', 'final_price')
+            ->get();
+
+        $effective = [];
+        foreach ($sp as $r) {
+            $effective[$r->seat_type_id] = !is_null($r->final_price) && $r->final_price > 0
+                ? (int)$r->final_price
+                : (int)($r->base_price ?? 0) + (int)($r->price ?? 0);
+        }
+
+        if (empty($effective) || collect($effective)->sum() == 0) {
+            $effective = DB::table('seat_types')
+                ->pluck('base_price', 'id')
+                ->map(fn($v) => (int)$v)
+                ->toArray();
+        }
+
+        // Hệ số loại vé cố định
+        $coefMap = ['adult' => 1.0, 'student' => 0.8, 'child' => 0.6];
+        $coef = $coefMap[$data['ticket_type']] ?? 1.0;
+
+        DB::transaction(function () use ($data, $showtime, $userId, $effective, $coef, $status) {
+            // Kiểm tra ghế bị giữ chỗ chưa
+            $exists = DB::table('tickets')
+                ->where('showtime_id', $showtime->id)
+                ->whereIn('seat_id', $data['seat_ids'])
+                ->where('status', '!=', 'canceled')
+                ->lockForUpdate()
+                ->exists();
+
+            if ($exists) {
+                abort(409, 'Một hoặc nhiều ghế đã bị người khác giữ chỗ. Vui lòng chọn lại.');
+            }
+
+            // Tạo vé mới
+            $rows = DB::table('seats')
+                ->whereIn('id', $data['seat_ids'])
+                ->select('id', 'seat_type_id')
+                ->get();
+
+            foreach ($rows as $row) {
+                $basePrice = (int)($effective[$row->seat_type_id] ?? 0);
+                $finalPrice = (int)round($basePrice * $coef);
+
+                DB::table('tickets')->insert([
+                    'showtime_id' => $showtime->id,
+                    'user_id'     => $userId,
+                    'seat_id'     => $row->id,
+                    'ticket_type' => $data['ticket_type'],
+                    'status'      => $status,
+                    'price'       => $basePrice,
+                    'final_price' => $finalPrice,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+            }
+        });
+
+        return redirect()->route('tickets.history')->with('ok', $status === 'paid'
+            ? 'Thanh toán thành công!'
+            : 'Đặt vé thành công! Bạn có thể thanh toán trong mục “Vé của tôi”.');
     }
 }

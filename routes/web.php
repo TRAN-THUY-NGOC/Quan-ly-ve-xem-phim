@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\PricesController;
 use App\Http\Controllers\Admin\TicketsController as AdminTicketsController;
 use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\UsersController;
+use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,8 +31,15 @@ use App\Http\Controllers\Admin\UsersController;
 
 // ---------------------- Public ----------------------
 
+// Route::get('/', function () {
+//     return redirect()->route('login');
+// });
 Route::get('/', function () {
-    return redirect()->route('login');
+    $u = Auth::user();
+    if (!$u) return redirect()->route('login');
+    return ($u->role_id == 1)
+        ? redirect()->route('admin.movies.index')   // Admin -> trang quản trị
+        : redirect()->route('customer.home');       // Customer -> trang chủ khách
 });
 
 // ---------------------- Auth required (mọi user) ----------------------
@@ -88,12 +96,15 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'checkRole:Admin'])->g
     ->name('rooms.trimSeats');
 
     // routes/web.php  (trong nhóm prefix('admin')->as('admin.')->middleware(['auth','checkRole:Admin']))
-    Route::get('tickets/{ticket}/edit', [\App\Http\Controllers\Admin\TicketsController::class,'edit'])
-        ->name('tickets.edit');
+    Route::get('tickets/{ticket}/edit', [AdminTicketsController::class, 'edit'])->name('tickets.edit');
+    Route::put('tickets/{ticket}', [AdminTicketsController::class, 'update'])->name('tickets.update');
 
-    Route::put('tickets/{ticket}', [\App\Http\Controllers\Admin\TicketsController::class,'update'])
-        ->name('tickets.update');
+    // routes/web.php  (trong nhóm admin + middleware checkRole:Admin)
+    Route::get('prices',  [PricesController::class, 'index'])->name('prices.index');
+    Route::post('prices', [PricesController::class, 'store'])->name('prices.store');
+    Route::post('prices/bootstrap', [PricesController::class, 'bootstrap'])->name('prices.bootstrap');
 
+        
 });
 
 // ---------------------- Customer only ----------------------
@@ -102,7 +113,10 @@ Route::middleware(['auth', 'checkRole:Customer'])->group(function () {
     Route::get('/user/dashboard', [MovieController::class, 'index'])->name('user.dashboard');
     Route::get('/movies',         [MovieController::class, 'index'])->name('movies.index');
     Route::get('/movies/{movie}', [MovieController::class, 'show'])->name('movies.show');
-
+    // Route::middleware(['auth'])->get('/', [\App\Http\Controllers\Customer\HomeController::class, 'index'])->name('customer.home');
+    // SAU: (đổi path -> '/home', giữ nguyên tên route)
+Route::get('/home', [\App\Http\Controllers\Customer\HomeController::class, 'index'])->name('customer.home');
+    
     // Bình luận theo phim
     Route::post('/movies/{movie}/comments', [CommentController::class, 'store'])
         ->middleware('throttle:10,1')
