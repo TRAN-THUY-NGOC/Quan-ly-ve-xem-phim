@@ -60,6 +60,9 @@
 
           <form id="seatForm" method="POST" action="{{ route('tickets.store',$showtime) }}">
             @csrf
+            <input type="hidden" name="voucher_id" id="voucher_id" value="">
+            <input type="hidden" name="pay_now" value="0"> {{-- giữ chỗ, không thanh toán ngay --}}
+
             <input type="hidden" name="seat_type_id" id="seat_type_id" value="{{ $ticketTypes->first()->id ?? 1 }}">
 
             <div class="seat-grid mx-auto">
@@ -111,11 +114,45 @@
           <div class="mb-1 small text-muted">Ghế đã chọn</div>
           <div id="seatList" class="mb-2">—</div>
 
+          <div class="mb-1 small text-muted">Mã ưu đãi</div>
+          <div class="d-flex gap-2">
+            <select id="voucherSelect" class="form-select form-select-sm">
+              <option value="">— Chọn mã —</option>
+              @foreach($vouchers as $v)
+                <option
+                  value="{{ $v->id }}"
+                  data-type="{{ $v->type }}"                 {{-- percent | fixed --}}
+                  data-value="{{ (float)$v->value }}"
+                  data-min="{{ (float)($v->min_order ?? 0) }}" {{-- nếu DB có cột min_order --}}
+                >
+                  {{ $v->code }}
+                  @if($v->type==='percent')
+                    ( -{{ (int)$v->value }}% )
+                  @else
+                    ( -{{ number_format($v->value,0,',','.') }}đ/ghế )
+                  @endif
+                </option>
+              @endforeach
+            </select>
+
+            <button type="button" id="applyVoucher" class="btn btn-outline-primary btn-sm">
+              Áp dụng
+            </button>
+          </div>
+          <div id="voucherNote" class="small text-muted mt-1">Chọn mã để áp dụng.</div>
+
+
+          
           <hr class="my-2">
+          <div class="d-flex justify-content-between small">
+            <div class="text-muted">Tạm tính</div>
+            <div id="subtotalText">0 đ</div>
+          </div>
           <div class="d-flex justify-content-between">
-            <div class="fw-bold">Tổng</div>
+            <div class="fw-bold">Tổng sau ưu đãi</div>
             <div class="fw-bold" id="totalText">0 đ</div>
           </div>
+
 
           <button type="button" class="btn btn-primary w-100 mt-3" id="btnPay" disabled>
             Thanh toán
@@ -149,34 +186,73 @@
 {{-- JS --}}
 <script>
 (function(){
-  let seatTypeId = document.getElementById('seat_type_id').value;
-  const seatBtns = document.querySelectorAll('.seat:not(.taken)');
-  const listBox  = document.getElementById('seatList');
-  const totalTxt = document.getElementById('totalText');
-  const hidden   = document.getElementById('hiddenInputs');
-  const payBtn   = document.getElementById('btnPay');
-  const typeBtns = document.querySelectorAll('.tt-btn');
+  // ====== DOM phần tử ======
+  const seatBtns       = document.querySelectorAll('.seat:not(.taken)');
+  const listBox        = document.getElementById('seatList');
+  const totalTxt       = document.getElementById('totalText');
+  const subtotalEl     = document.getElementById('subtotalText');
+  const hidden         = document.getElementById('hiddenInputs');
+  const payBtn         = document.getElementById('btnPay');
+  const typeBtns       = document.querySelectorAll('.tt-btn');
 
-  let selected = []; // {id, label}
-  let currentPrice = Number(document.querySelector('.tt-btn.active')?.dataset.price || 0);
+  const voucherSel     = document.getElementById('voucherSelect');
+  const voucherBtn     = document.getElementById('applyVoucher');
+  const voucherIdInput = document.getElementById('voucher_id');
+  const payNowInput    = document.querySelector('input[name="pay_now"]');
+  const seatTypeInput  = document.getElementById('seat_type_id');
+  const voucherNote    = document.getElementById('voucherNote');
 
-  function formatVND(n){ return new Intl.NumberFormat('vi-VN').format(n) + ' đ'; }
+  // ====== State ======
+  let selected = [];         // danh sách ghế {id,label,base}
+  let appliedVoucher = null; // voucher {id,type,value,min}
 
-  function calcTotal(){
-    return selected.length * currentPrice;
+  // ====== Helper ======
+  const fmt = n => new Intl.NumberFormat('vi-VN').format(n) + ' đ';
+  const rawSubtotal = () => selected.reduce((s,x)=> s + (Number(x.base)||0), 0);
+
+  // ====== Tính toán voucher & tổng ======
+  function calcTotal(subtotal){
+    if(!appliedVoucher || subtotal <= 0){
+      return { total: subtotal, msg: 'Chọn mã để áp dụng.' };
+    }
+    const t  = (appliedVoucher.type || '').toLowerCase();
+    const v  = Number(appliedVoucher.value || 0);
+    const mn = Number(appliedVoucher.min || 0);
+
+    if (mn && subtotal < mn)
+      return { total: subtotal, msg: `Chưa đạt tối thiểu ${fmt(mn)}.` };
+
+    let total = subtotal;
+    if (t === 'percent') {
+      total = Math.max(Math.round(subtotal * (100 - v) / 100), 0);
+      return { total, msg: `Đã áp dụng -${v}%` };
+    } else if (t === 'fixed') {
+      total = Math.max(subtotal - v * selected.length, 0);
+      return { total, msg: `Đã áp dụng -${fmt(v)} mỗi ghế` };
+    }
+    return { total: subtotal, msg: 'Mã không hợp lệ.' };
   }
 
+  // ====== Render giao diện ======
   function render(){
-    if(selected.length === 0){
+    // Danh sách ghế
+    if (selected.length === 0) {
       listBox.textContent = '—';
-      totalTxt.textContent = '0 đ';
       payBtn.disabled = true;
     } else {
-      listBox.textContent = selected.map(x => x.label).join(', ');
-      totalTxt.textContent = formatVND(calcTotal());
+      listBox.textContent = selected.map(x=>x.label).join(', ');
       payBtn.disabled = false;
     }
 
+    // Tiền
+    const subtotal = rawSubtotal();
+    subtotalEl.textContent = fmt(subtotal);
+
+    const { total, msg } = calcTotal(subtotal);
+    totalTxt.textContent = fmt(total);
+    voucherNote.textContent = appliedVoucher ? msg : 'Chọn mã để áp dụng.';
+
+    // hidden inputs ghế
     hidden.innerHTML = '';
     selected.forEach(x=>{
       const i=document.createElement('input');
@@ -187,14 +263,16 @@
     });
   }
 
-  // chọn ghế
+  // ====== Chọn ghế ======
   seatBtns.forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const id = Number(btn.dataset.id);
-      const label = btn.title.split(' • ')[0];
+      const id    = Number(btn.dataset.id);
+      const label = (btn.title||'').split(' • ')[0];
+      const base  = Number(btn.dataset.base || 0);
+
       btn.classList.toggle('selected');
-      if(btn.classList.contains('selected')){
-        selected.push({id, label});
+      if (btn.classList.contains('selected')) {
+        selected.push({id,label,base});
       } else {
         selected = selected.filter(x=>x.id!==id);
       }
@@ -202,20 +280,60 @@
     });
   });
 
-  // chọn loại ghế
+  // ====== Chọn loại ghế (chỉ đồng bộ, không đổi giá) ======
   typeBtns.forEach(b=>{
     b.addEventListener('click', ()=>{
       typeBtns.forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
-      seatTypeId = b.dataset.type;
-      currentPrice = Number(b.dataset.price);
-      document.getElementById('seat_type_id').value = seatTypeId;
-      render(); // cập nhật lại tổng ngay khi đổi loại ghế
+      if (seatTypeInput) seatTypeInput.value = b.dataset.type || '';
+      render();
     });
   });
 
+  // ====== Chọn & áp dụng voucher ======
+  function setVoucherFromSelect(){
+    const id = voucherSel?.value || '';
+    if (!id) {
+      appliedVoucher = null;
+      voucherIdInput.value = '';
+      render();
+      return;
+    }
+
+    const opt = voucherSel.selectedOptions[0];
+    appliedVoucher = {
+      id: Number(id),
+      type: (opt?.dataset?.type || '').toLowerCase(),
+      value: Number(opt?.dataset?.value || 0),
+      min: Number(opt?.dataset?.min || 0),
+    };
+    voucherIdInput.value = id;
+    render();
+  }
+
+  voucherBtn.addEventListener('click', setVoucherFromSelect);
+  voucherSel.addEventListener('change', setVoucherFromSelect);
+
+  // ====== Nút Thanh toán ======
+  payBtn.addEventListener('click', ()=>{
+    // Gạt sang chế độ thanh toán ngay
+    if (payNowInput) payNowInput.value = '1';
+
+    // Nếu user chỉ chọn mã mà chưa bấm "Áp dụng", vẫn sync voucher
+    if (voucherSel && voucherIdInput && !voucherIdInput.value) {
+      voucherIdInput.value = voucherSel.value || '';
+    }
+
+    // Submit form
+    document.getElementById('seatForm').submit();
+  });
+
+  // ====== Khởi tạo ======
   render();
 })();
 </script>
+
+
+
 
 @endsection

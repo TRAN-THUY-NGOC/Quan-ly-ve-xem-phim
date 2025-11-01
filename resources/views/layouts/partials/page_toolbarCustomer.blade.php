@@ -14,21 +14,19 @@
       <li class="{{ request()->is('movies*') ? 'active' : '' }}">
         <a href="{{ url('/movies') }}">Phim</a>
       </li>
-      <li class="{{ request()->is('showtimes*') ? 'active' : '' }}">
+      <!-- <li class="{{ request()->is('showtimes*') ? 'active' : '' }}">
         <a href="{{ url('/showtimes') }}">Lịch chiếu</a>
       </li>
       <li class="{{ request()->is('prices*') ? 'active' : '' }}">
         <a href="{{ url('/prices') }}">Giá vé</a>
+      </li> -->
+      <li class="{{ request()->routeIs('tickets.history') ? 'active' : '' }}">
+        <a href="{{ route('tickets.history') }}">Vé của tôi</a>
       </li>
-      <li class="{{ request()->is('tickets*') ? 'active' : '' }}">
-        <a href="{{ url('/tickets') }}">Vé của tôi</a>
-      </li>
-      <li class="{{ request()->is('promos*') ? 'active' : '' }}">
-        <a href="{{ url('/promos') }}">Khuyến mãi</a>
-      </li>
-      <li class="{{ request()->is('profile*') ? 'active' : '' }}">
-        <a href="{{ url('/profile') }}">Tài khoản</a>
+      <li class="{{ request()->routeIs('profile.*') ? 'active' : '' }}">
+        <a href="{{ route('profile.view') }}">Tài khoản</a>
       </li>
     </ul>
   </div>
 </nav>
+
