@@ -8,51 +8,63 @@ use Illuminate\Support\Carbon;
 
 class MovieController extends Controller
 {
-    /**
-     * Danh sách phim cho khách:
-     * - filter: status=now|upcoming (đang chiếu / sắp chiếu)
-     * - q: từ khoá theo tên
-     * - genre: thể loại (nếu có cột/quan hệ)
-     * Giả định movies có cột: title, poster_url, release_date (DATE), duration, trailer_url, description
-     */
     public function index(Request $r)
     {
-        $q       = trim($r->query('q', ''));
-        $status  = $r->query('status'); // now|upcoming|null
-        $today   = Carbon::today();
+        $tab   = $r->query('tab', 'now'); // now | upcoming
+        $today = Carbon::today();
 
-        $movies = DB::table('movies')
-            ->when($q, fn($t) => $t->where('title', 'like', "%$q%"))
-            ->when($status === 'now', function ($t) use ($today) {
-                // Đang chiếu: có ít nhất 1 suất chiếu từ hôm nay trở đi
-                $t->whereExists(function ($q) use ($today) {
-                    $q->from('showtimes')->whereColumn('showtimes.movie_id', 'movies.id')
-                      ->whereDate('start_time', '>=', $today->toDateString());
-                });
-            })
-            ->when($status === 'upcoming', function ($t) use ($today) {
-                // Sắp chiếu: ngày phát hành sau hôm nay (hoặc chưa có suất)
-                $t->whereDate('release_date', '>', $today->toDateString());
-            })
+        // Banner: lấy vài phim có poster
+        $banners = DB::table('movies')
+            ->whereNotNull('poster_url')
             ->orderByDesc('release_date')
-            ->paginate(12)
-            ->withQueryString();
+            ->limit(5)
+            ->get();
 
-        return view('movies.index', compact('movies', 'q', 'status'));
+        // ==== ĐANG CHIẾU ====
+        $nowShowing = DB::table('movies as m')
+            ->leftJoin('showtimes as st', 'st.movie_id', '=', 'm.id')
+            ->select('m.id','m.title','m.genre','m.poster_url','m.release_date','m.duration')
+            ->where(function ($q) use ($today) {
+                $q->where('m.is_now_showing', 1)
+                  ->orWhere('m.status', 'now')
+                  ->orWhere(function ($q2) use ($today) {
+                      $q2->whereNotNull('st.id')
+                         ->whereDate('st.start_time', '>=', $today->toDateString());
+                  });
+            })
+            ->groupBy('m.id','m.title','m.genre','m.poster_url','m.release_date','m.duration')
+            ->orderBy('m.title')
+            ->paginate(24, ['*'], 'page_now')
+            ->appends(['tab'=>'now']);
+
+        // ==== SẮP CHIẾU ====
+        $upcoming = DB::table('movies as m')
+            ->leftJoin('showtimes as st', 'st.movie_id', '=', 'm.id')
+            ->select('m.id','m.title','m.genre','m.poster_url','m.release_date','m.duration')
+            ->where(function ($q) use ($today) {
+                $q->where('m.status', 'upcoming')
+                  ->orWhereDate('m.release_date', '>=', $today->toDateString());
+            })
+            ->where(function ($q) {
+                // tránh trùng với đang chiếu nếu bạn đã bật cờ
+                $q->whereNull('m.is_now_showing')
+                  ->orWhere('m.is_now_showing', 0);
+            })
+            ->groupBy('m.id','m.title','m.genre','m.poster_url','m.release_date','m.duration')
+            ->orderBy('m.release_date')
+            ->paginate(24, ['*'], 'page_up')
+            ->appends(['tab'=>'upcoming']);
+
+        return view('movies.index', compact('banners','tab','nowShowing','upcoming'));
     }
 
-    /**
-     * Trang chi tiết phim + các suất theo ngày chọn
-     */
     public function show($movieId, Request $r)
     {
         $movie = DB::table('movies')->where('id', $movieId)->first();
         if (!$movie) return redirect()->route('movies.index')->withErrors('Không tìm thấy phim.');
 
-        $date = $r->query('date'); // yyyy-mm-dd
-        $day  = $date ? Carbon::parse($date) : Carbon::today();
+        $day = $r->query('date') ? Carbon::parse($r->query('date')) : Carbon::today();
 
-        // Load suất chiếu trong ngày, kèm phòng
         $showtimes = DB::table('showtimes as st')
             ->join('rooms as rm', 'rm.id', '=', 'st.room_id')
             ->where('st.movie_id', $movieId)
@@ -61,6 +73,6 @@ class MovieController extends Controller
             ->select('st.id', 'st.start_time', 'rm.name as room_name', 'rm.id as room_id')
             ->get();
 
-        return view('movies.show', compact('movie', 'showtimes', 'day'));
+        return view('movies.show', compact('movie','showtimes','day'));
     }
 }

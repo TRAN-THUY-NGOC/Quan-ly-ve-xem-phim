@@ -33,7 +33,7 @@ class AuthenticatedSessionController extends Controller
             }
 
             // User thường
-            return redirect()->route('user.dashboard');
+            return redirect()->route('customer.home');
         }
 
         return back()->withErrors(['email' => 'Sai tài khoản hoặc mật khẩu.']);

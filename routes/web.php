@@ -41,6 +41,7 @@ Route::get('/', function () {
         ? redirect()->route('admin.movies.index')   // Admin -> trang quản trị
         : redirect()->route('customer.home');       // Customer -> trang chủ khách
 });
+
 // ---------------------- Auth required (mọi user) ----------------------
 Route::middleware('auth')->group(function () {
     // Hồ sơ người dùng

@@ -29,19 +29,23 @@
 
       <div class="col-md-4">
         <label class="form-label">Thời lượng (phút)</label>
-        <input type="number" name="duration_min" class="form-control" min="1" max="600" required
-               value="{{ old('duration_min', $movie->duration_min) }}">
+        <input type="number" name="duration" class="form-control" min="1" max="600" required
+               value="{{ old('duration', $movie->duration) }}">
       </div>
       <div class="col-md-4">
         <label class="form-label">Ngày khởi chiếu</label>
         <input type="date" name="release_date" class="form-control" required
                value="{{ old('release_date', optional($movie->release_date)->format('Y-m-d')) }}">
       </div>
+
       <div class="col-md-4 d-flex align-items-center">
         <div class="form-check mt-4">
-          <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
-                 {{ old('is_active', $movie->is_active) ? 'checked' : '' }}>
-          <label class="form-check-label" for="is_active">Hiển thị</label>
+          {{-- luôn gửi 0 khi unchecked --}}
+          <input type="hidden" name="is_now_showing" value="0">
+          {{-- checked -> gửi 1 --}}
+          <input class="form-check-input" type="checkbox" id="is_now_showing" name="is_now_showing" value="1"
+                 {{ old('is_now_showing', (int)$movie->is_now_showing) ? 'checked' : '' }}>
+          <label class="form-check-label" for="is_now_showing">Đang chiếu</label>
         </div>
       </div>
 
@@ -57,8 +61,8 @@
       </div>
 
       <div class="col-12">
-        <label class="form-label">Mô tả</label>
-        <textarea name="description" rows="4" class="form-control">{{ old('description', $movie->description) }}</textarea>
+        <label class="form-label">Mô tả (summary)</label>
+        <textarea name="summary" rows="4" class="form-control">{{ old('summary', $movie->summary) }}</textarea>
       </div>
     </div>
 
