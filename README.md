@@ -1,50 +1,141 @@
-# 🎬 HỆ THỐNG QUẢN LÝ VÉ XEM PHIM
+# 🎬 HỆ THỐNG QUẢN LÝ VÉ XEM PHIM (QL_Cinema)
 
 ## 🧾 Thông tin chung
-**Tên đề tài:** Web hệ thống quản lý vé xem phim  
+**Tên đề tài:** Hệ thống quản lý vé xem phim  
 **Môn học:** Nhập môn Công nghệ phần mềm  
-**Ngôn ngữ & Công nghệ sử dụng:**
-- **Frontend:** HTML5, CSS3, JavaScript, Bootstrap 5, Blade
+**Thành viên nhóm:** Nhóm 5
+**Giảng viên hướng dẫn:** GV. Lê Thanh Thoại
+
+### 🔧 Công nghệ sử dụng
+- **Frontend:** HTML5, CSS3, JavaScript, Bootstrap 5, Blade Template  
 - **Backend:** PHP 8.2.12 (Laravel Framework 12.34.0)  
 - **Database:** MySQL  
-- **Công cụ hỗ trợ:** Composer, GitHub  
+- **Công cụ hỗ trợ:** Composer, Git, GitHub, XAMPP  
 
 ---
 
 ## 🎯 Mục tiêu đề tài
-Xây dựng một website giúp khách hàng dễ dàng tra cứu thông tin phim, đặt vé xem phim trực tuyến và quản lý lịch chiếu, phòng chiếu, suất chiếu.  
-Hệ thống hỗ trợ:
-- Quản lý người dùng (Admin / Khách hàng)
-- Quản lý phim, suất chiếu, phòng chiếu, vé
-- Đặt vé và lưu thông tin giao dịch
-- Xem thống kê, báo cáo doanh thu
+Xây dựng một website giúp khách hàng:
+- Tra cứu thông tin phim (tên, thể loại, thời lượng, ngày chiếu, trailer)
+- Chọn suất chiếu, ghế và **đặt vé trực tuyến**
+- Thanh toán qua **mã QR mô phỏng** và nhận vé điện tử  
+
+Đồng thời, hệ thống hỗ trợ **Admin** quản lý:
+- Phim, phòng chiếu, suất chiếu  
+- Giá vé, loại ghế, voucher  
+- Người dùng và thống kê doanh thu
 
 ---
 
-## ⚙️ Chức năng chính
+## ⚙️ Các chức năng chính
 
-### 👤 Người dùng (Khách hàng)
-- Đăng ký, đăng nhập, đăng xuất
-- Tra cứu danh sách phim theo tên, thể loại, ngày khởi chiếu
-- Xem chi tiết phim (poster, trailer, mô tả, thời lượng, diễn viên)
-- Chọn suất chiếu, chọn ghế, đặt vé online
-- Xem lịch sử đặt vé
+### 👤 Khách hàng (Customer)
+- Đăng ký, đăng nhập, đăng xuất  
+- Xem danh sách phim đang chiếu và sắp chiếu  
+- Chọn suất chiếu → chọn ghế → đặt vé  
+- Thanh toán bằng QR code (mô phỏng)  
+- Xem lịch sử đặt vé và chi tiết vé  
 
 ### 🧑‍💼 Quản trị viên (Admin)
-- Đăng nhập quản trị
-- Quản lý thông tin phim (thêm, sửa, xóa)
-- Quản lý suất chiếu, phòng chiếu
-- Quản lý người dùng và nhân viên
-- Xem thống kê doanh thu theo ngày/tháng
+- Đăng nhập vào giao diện quản trị  
+- Quản lý phim (CRUD)  
+- Quản lý suất chiếu, phòng chiếu, loại ghế, giá vé  
+- Quản lý voucher khuyến mãi  
+- Quản lý người dùng (phân quyền, khóa/mở tài khoản)  
+- Xem **thống kê doanh thu**, tổng số vé bán ra  
 
 ---
 
-## 🧰 Cài đặt môi trường
+## 🧰 Hướng dẫn cài đặt môi trường
 
-### 1️⃣ Hướng dẫn clone về máy
-```bash
-git clone https://github.com/TRAN-THUY-NGOC/Quan-ly-ve-xem-phim.git
+### 1️⃣ Clone project về máy
 ```
+git clone https://github.com/TRAN-THUY-NGOC/Quan-ly-ve-xem-phim.git
+cd Quan-ly-ve-xem-phim
+```
+### 2️⃣ Cài đặt package
+```
+composer install
+```
+### 3️⃣ Cấu hình file môi trường
+```
+cp .env.example .env
+php artisan key:generate
+```
+// Mở file .env và chỉnh sửa phần database:
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=ql_cinema
+DB_USERNAME=root
+DB_PASSWORD=
+
+### 4️⃣ Tạo cơ sở dữ liệu
+Truy cập: http://localhost/phpmyadmin  
+Tạo database mới tên ql_cinema (collation: utf8mb4_unicode_ci)
+
+### 5️⃣ Chạy migrate và tạo storage link
+```
+php artisan migrate
+php artisan storage:link
+```
+### 6️⃣ Tạo tài khoản Admin bằng Tinker
+```
+php artisan tinker
+
+Nhập:
+\App\Models\User::create([
+    'name' => 'Admin',
+    'email' => 'admin@example.com',
+    'password' => bcrypt('123456'),
+    'role_id' => 1,
+]);
+```
+### 7️⃣ Chạy server
+```
+php artisan serve
+```
+Truy cập: http://127.0.0.1:8000  
+Đăng nhập bằng tài khoản Admin:  
+Email: admin@example.com  
+Mật khẩu: 123456
+
+---
+
+## 📊 Cấu trúc thư mục Laravel
+app/
+bootstrap/
+config/
+database/
+public/
+resources/
+routes/
+storage/
+tests/
+.env.example
+composer.json
+artisan
+README.md
+
+---
+
+## 💡 Kết luận và Hướng phát triển
+
+### Kết luận
+Hệ thống đã hoàn thiện các chức năng cơ bản của một web đặt vé phim trực tuyến, đảm bảo quy trình **đặt vé – thanh toán – lưu trữ vé** hoạt động ổn định.  
+Ứng dụng áp dụng thành công mô hình **MVC trong Laravel**, sử dụng cơ chế **transaction và lockForUpdate** để đảm bảo tính toàn vẹn dữ liệu khi xử lý thanh toán.
+
+### Hạn chế
+- Thanh toán mới ở mức mô phỏng (chưa kết nối ví điện tử thật)  
+- Chưa hiển thị thống kê dạng biểu đồ hoặc dashboard trực quan  
+
+### Hướng phát triển
+- Tích hợp cổng thanh toán thực tế (Momo, VNPAY, PayOS)  
+- Gửi email xác nhận vé, mã QR tự động sau thanh toán  
+- Xây dựng module báo cáo doanh thu bằng biểu đồ  
+- Cung cấp REST API phục vụ mobile app hoặc client khác  
+- Triển khai hệ thống lên server thực (Render / Hostinger / AWS)
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
