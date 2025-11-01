@@ -14,9 +14,14 @@ class ShowtimePrice extends Model
     protected $fillable = [
         'showtime_id',
         'seat_type_id',
-        'price_modifier',
+        'base_price',     // Giá gốc theo loại ghế
+        'price',          // Giá điều chỉnh thủ công
+        'final_price',    // Giá áp dụng thực tế (có thể = price hoặc base_price)
+        'note',           // Ghi chú (VD: Ngày lễ +20%)
+        'updated_by',     // ID người chỉnh sửa
     ];
 
+    // ========== Quan hệ ==========
     public function showtime()
     {
         return $this->belongsTo(Showtime::class, 'showtime_id');
@@ -25,5 +30,10 @@ class ShowtimePrice extends Model
     public function seatType()
     {
         return $this->belongsTo(SeatType::class, 'seat_type_id');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

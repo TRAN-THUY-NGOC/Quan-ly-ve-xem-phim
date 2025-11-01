@@ -99,7 +99,12 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'checkRole:Admin'])->g
     Route::get('tickets/{ticket}/edit', [AdminTicketsController::class, 'edit'])->name('tickets.edit');
     Route::put('tickets/{ticket}', [AdminTicketsController::class, 'update'])->name('tickets.update');
 
+    // routes/web.php  (trong nhóm admin + middleware checkRole:Admin)
+    Route::get('prices',  [PricesController::class, 'index'])->name('prices.index');
+    Route::post('prices', [PricesController::class, 'store'])->name('prices.store');
+    Route::post('prices/bootstrap', [PricesController::class, 'bootstrap'])->name('prices.bootstrap');
 
+        
 });
 
 // ---------------------- Customer only ----------------------
