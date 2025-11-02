@@ -1,30 +1,22 @@
--- =====================
--- Mã nguồn SQL dùng để tạo bảng CSDL
--- =====================
----- Chạy toàn bộ bên dưới xong thì chạy này:
+-- =========================================
+-- INIT DATABASE
+-- =========================================
+CREATE DATABASE ql_cinema CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE ql_cinema;
 
---- Inset roles Phân quyền
-INSERT INTO roles (id, name) VALUES
-  (1,'Admin'), (2,'Customer')
-ON DUPLICATE KEY UPDATE name=VALUES(name);
-
-
--- Chạy bảng dưới đây trước
--- QL_Cinema
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS=0;
+SET FOREIGN_KEY_CHECKS = 0;
 
-
--- =====================================
--- 1) Base / Root tables (no FK depend)
--- =====================================
+-- =========================================
+-- 1) BASE / ROOT TABLES (NO FK)
+-- =========================================
 
 -- roles
 CREATE TABLE roles (
   id INT(11) NOT NULL AUTO_INCREMENT,
   name VARCHAR(50) NOT NULL,
   PRIMARY KEY (id),
-  UNIQUE KEY name (name)
+  UNIQUE KEY uq_roles_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- membership_levels
@@ -35,7 +27,7 @@ CREATE TABLE membership_levels (
   discount_percent INT(11) NOT NULL DEFAULT 0,
   perks LONGTEXT NULL DEFAULT NULL,
   PRIMARY KEY (id),
-  UNIQUE KEY name (name)
+  UNIQUE KEY uq_membership_levels_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- seat_types
@@ -45,7 +37,7 @@ CREATE TABLE seat_types (
   description VARCHAR(255) NULL,
   base_price INT(10) NOT NULL DEFAULT 80000,
   PRIMARY KEY (id),
-  UNIQUE KEY name (name)
+  UNIQUE KEY uq_seat_types_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- movies
@@ -64,15 +56,15 @@ CREATE TABLE movies (
   status ENUM('draft', 'published') NULL DEFAULT 'published',
   is_now_showing TINYINT(1) NULL DEFAULT 1,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_movies_nowshow (is_now_showing),
   KEY idx_movies_release (release_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ========================
--- 2) Depends on base
--- ========================
+-- =========================================
+-- 2) TABLES DEPENDING ON BASE
+-- =========================================
 
 -- users (FK -> roles)
 CREATE TABLE users (
@@ -87,10 +79,10 @@ CREATE TABLE users (
   remember_token VARCHAR(100) NULL DEFAULT NULL,
   email_verified_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY email (email),
-  UNIQUE KEY users_phone_unique (phone),
+  UNIQUE KEY uq_users_email (email),
+  UNIQUE KEY uq_users_phone (phone),
   KEY fk_users_role (role_id),
   CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -103,9 +95,9 @@ CREATE TABLE rooms (
   capacity INT(11) NOT NULL DEFAULT 0,
   seat_layout LONGTEXT NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY name (name)
+  UNIQUE KEY uq_rooms_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- audit_logs (FK -> users)
@@ -124,9 +116,9 @@ CREATE TABLE audit_logs (
   CONSTRAINT fk_audit_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ================================
--- 3) Seats, Showtimes, Pricing
--- ================================
+-- =========================================
+-- 3) SEATS, SHOWTIMES, PRICING
+-- =========================================
 
 -- seats (FK -> rooms, seat_types)
 CREATE TABLE seats (
@@ -141,9 +133,9 @@ CREATE TABLE seats (
   seat_type_id BIGINT(20) NOT NULL,
   status ENUM('active', 'blocked') NOT NULL DEFAULT 'active',
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_room_seat (room_id, row_label, seat_number),
+  UNIQUE KEY uq_room_seat (room_id, row_letter, seat_number),
   KEY idx_seats_room (room_id),
   KEY idx_seats_type (seat_type_id),
   CONSTRAINT fk_seats_room FOREIGN KEY (room_id) REFERENCES rooms(id),
@@ -160,7 +152,7 @@ CREATE TABLE showtimes (
   language VARCHAR(50) NULL DEFAULT 'VN',
   status ENUM('scheduled', 'ongoing', 'completed', 'cancelled') NULL DEFAULT 'scheduled',
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_showtimes_movie (movie_id),
   KEY idx_showtimes_room (room_id),
@@ -181,7 +173,7 @@ CREATE TABLE showtime_prices (
   note VARCHAR(255) NULL,
   updated_by BIGINT(20) NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uniq_showtime_type (showtime_id, seat_type_id),
   KEY idx_stprice_showtime (showtime_id),
@@ -190,9 +182,9 @@ CREATE TABLE showtime_prices (
   CONSTRAINT fk_stprice_seattype FOREIGN KEY (seat_type_id) REFERENCES seat_types(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ==========================
--- 4) Vouchers & Tickets
--- ==========================
+-- =========================================
+-- 4) VOUCHERS & TICKETS & PAYMENTS
+-- =========================================
 
 -- vouchers
 CREATE TABLE vouchers (
@@ -208,9 +200,9 @@ CREATE TABLE vouchers (
   status ENUM('active', 'inactive', 'expired') NOT NULL DEFAULT 'active',
   meta LONGTEXT NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY code (code)
+  UNIQUE KEY uq_vouchers_code (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- tickets (FK -> users, showtimes, seats, vouchers)
@@ -225,12 +217,11 @@ CREATE TABLE tickets (
   voucher_id BIGINT(20) NULL DEFAULT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'reserved',
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_ticket_unique (showtime_id, seat_id),
   KEY idx_tickets_user (user_id),
-  KEY fk_tickets_seat (seat_id),
-  KEY fk_tickets_voucher (voucher_id),
+  KEY idx_tickets_voucher (voucher_id),
   KEY idx_tickets_showtime_status (showtime_id, status),
   CONSTRAINT fk_tickets_user     FOREIGN KEY (user_id)     REFERENCES users(id),
   CONSTRAINT fk_tickets_showtime FOREIGN KEY (showtime_id) REFERENCES showtimes(id),
@@ -238,7 +229,7 @@ CREATE TABLE tickets (
   CONSTRAINT fk_tickets_voucher  FOREIGN KEY (voucher_id)  REFERENCES vouchers(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- payments (FK -> tickets)
+-- payments (FK -> tickets + optional to user/showtime/voucher)
 CREATE TABLE payments (
   id BIGINT(20) NOT NULL AUTO_INCREMENT,
   user_id BIGINT(20) NOT NULL,
@@ -253,15 +244,21 @@ CREATE TABLE payments (
   txn_id VARCHAR(100) NULL,
   paid_at DATETIME NULL,
   created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_payment_ticket (ticket_id),
-  CONSTRAINT fk_payments_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id)
+  KEY idx_pay_user (user_id),
+  KEY idx_pay_showtime (showtime_id),
+  KEY idx_pay_voucher (voucher_id),
+  CONSTRAINT fk_payments_ticket   FOREIGN KEY (ticket_id)   REFERENCES tickets(id),
+  CONSTRAINT fk_payments_user     FOREIGN KEY (user_id)     REFERENCES users(id)     ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_payments_showtime FOREIGN KEY (showtime_id) REFERENCES showtimes(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_payments_voucher  FOREIGN KEY (voucher_id)  REFERENCES vouchers(id)  ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ==================================
--- 5) Extensions & relational extras
--- ==================================
+-- =========================================
+-- 5) EXTENSIONS
+-- =========================================
 
 -- comments (FK -> users, movies)
 CREATE TABLE comments (
@@ -287,13 +284,15 @@ CREATE TABLE voucher_usages (
   seats_count INT(11) NOT NULL DEFAULT 1,
   subtotal INT(11) NOT NULL,
   discount INT(11) NOT NULL,
-  created_at TIMESTAMP NULL DEFAULT NULL,
-  updated_at TIMESTAMP NULL DEFAULT NULL,
+  created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  KEY voucher_id (voucher_id),
-  KEY showtime_id (showtime_id),
-  CONSTRAINT fk_voucher_usages_voucher FOREIGN KEY (voucher_id) REFERENCES vouchers(id),
-  CONSTRAINT fk_voucher_usages_showtime FOREIGN KEY (showtime_id) REFERENCES showtimes(id)
+  KEY idx_voucher_usages_voucher (voucher_id),
+  KEY idx_voucher_usages_showtime (showtime_id),
+  KEY idx_voucher_usages_user (user_id),
+  CONSTRAINT fk_voucher_usages_voucher  FOREIGN KEY (voucher_id)  REFERENCES vouchers(id),
+  CONSTRAINT fk_voucher_usages_showtime FOREIGN KEY (showtime_id) REFERENCES showtimes(id),
+  CONSTRAINT fk_voucher_usages_user     FOREIGN KEY (user_id)     REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- sessions
@@ -317,7 +316,16 @@ CREATE TABLE cache (
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-SET FOREIGN_KEY_CHECKS=1;
+SET FOREIGN_KEY_CHECKS = 1;
 
+-- =========================================
+-- SEED CƠ BẢN
+-- =========================================
+INSERT INTO roles (id, name) VALUES (1,'Admin'),(2,'Customer')
+  ON DUPLICATE KEY UPDATE name=VALUES(name);
 
-
+INSERT INTO seat_types (id, name, description, base_price) VALUES
+  (1,'Thường','Ghế ngồi tiêu chuẩn',80000),
+  (2,'VIP','Ghế VIP cao cấp',110000),
+  (3,'Đôi','Ghế đôi 2 người',150000)
+ON DUPLICATE KEY UPDATE description=VALUES(description), base_price=VALUES(base_price);
