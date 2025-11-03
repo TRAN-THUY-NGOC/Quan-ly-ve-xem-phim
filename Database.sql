@@ -329,3 +329,6 @@ INSERT INTO seat_types (id, name, description, base_price) VALUES
   (2,'VIP','Ghế VIP cao cấp',110000),
   (3,'Đôi','Ghế đôi 2 người',150000)
 ON DUPLICATE KEY UPDATE description=VALUES(description), base_price=VALUES(base_price);
+
+ALTER TABLE users
+ADD COLUMN avatar VARCHAR(255) NULL AFTER address;
