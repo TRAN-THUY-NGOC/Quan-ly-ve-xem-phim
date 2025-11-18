@@ -332,3 +332,8 @@ ON DUPLICATE KEY UPDATE description=VALUES(description), base_price=VALUES(base_
 
 ALTER TABLE users
 ADD COLUMN avatar VARCHAR(255) NULL AFTER address;
+
+ALTER TABLE tickets
+ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN membership_discount_rate DECIMAL(5,2) DEFAULT 0,
+ADD COLUMN qr_code VARCHAR(255) NULL;

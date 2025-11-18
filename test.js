@@ -7,7 +7,7 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get('https://nguyenphat22.github.io/CodeMultipleChoiceGame2025/'); // đổi URL nếu cần
+  const res = http.get('http://127.0.0.1:8000/login'); // đổi URL nếu cần
   check(res, { 'status 500': (r) => r.status === 500 });
   sleep(1); // hành vi user đơn giản: chờ 1s
 }

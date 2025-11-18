@@ -53,18 +53,34 @@ class PricesController extends Controller
             'price.*.id' => ['required','integer','exists:showtime_prices,id'],
             'price.*.price_modifier' => ['required','numeric','min:-10000000','max:100000000'],
         ]);
-
+    
         foreach ($r->input('price') as $row) {
+        
+            // Lấy base_price tương ứng
+            $base = DB::table('showtime_prices as sp')
+                ->join('seat_types as st', 'st.id', '=', 'sp.seat_type_id')
+                ->where('sp.id', $row['id'])
+                ->value('st.base_price');
+        
+            $modifier = (float)$row['price_modifier'];
+        
+            // Nếu giảm vượt quá giá gốc → báo lỗi
+            if ($modifier < -$base) {
+                return back()->with('err', "Giảm giá không được vượt quá giá gốc ({$base} đ).");
+            }
+        
+            // Cập nhật
             DB::table('showtime_prices')
-              ->where('id', $row['id'])
-              ->update([
-                  'price_modifier' => (float)$row['price_modifier'],
-                  'updated_at'     => now(),
-              ]);
+                ->where('id', $row['id'])
+                ->update([
+                    'price_modifier' => $modifier,
+                    'updated_at'     => now(),
+                ]);
         }
-
+    
         return back()->with('ok', 'Đã lưu thay đổi giá.');
     }
+
 
     // Khởi tạo cấu hình giá cho các suất chiếu (tạo bản ghi nếu chưa có)
     public function bootstrap(Request $r)
